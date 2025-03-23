@@ -1,0 +1,184 @@
+:root[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-secondary-hover: #495057;
+  --border-color: #dee2e6;
+  --accent-color: #0d6efd;
+  --accent-hover: #0b5ed7;
+  --navbar-bg: #ffffff;
+  --navbar-text: #212529;
+  --card-bg: #ffffff;
+  --card-border: #dee2e6;
+  --input-bg: #ffffff;
+  --input-border: #ced4da;
+  --input-text: #212529;
+  --button-primary-bg: #0d6efd;
+  --button-primary-text: #ffffff;
+  --button-secondary-bg: #6c757d;
+  --button-secondary-text: #ffffff;
+  --toast-bg: #ffffff;
+  --toast-text: #212529;
+  --code-bg: #f8f9fa;
+  --code-text: #212529;
+  --auth-bg: #cfe2ff;
+  --auth-text: #0d6efd;
+  --delete-hover: #dc3545;
+  --error-text: #dc3545;
+  --error-text-hover: #bb2d3b;
+  --error-border: #dc3545;
+  --error-bg: #dc3545;
+  --error-bg-hover: #bb2d3b;
+  --accent-color-hover: #0b5ed7;
+}
+
+:root[data-theme="dark"] {
+  --bg-primary: #212529;
+  --bg-secondary: #343a40;
+  --text-primary: #f8f9fa;
+  --text-secondary: #adb5bd;
+  --text-secondary-hover: #ced4da;
+  --border-color: #495057;
+  --accent-color: #0d6efd;
+  --accent-hover: #0b5ed7;
+  --navbar-bg: #343a40;
+  --navbar-text: #f8f9fa;
+  --card-bg: #343a40;
+  --card-border: #495057;
+  --input-bg: #495057;
+  --input-border: #6c757d;
+  --input-text: #f8f9fa;
+  --button-primary-bg: #0d6efd;
+  --button-primary-text: #ffffff;
+  --button-secondary-bg: #6c757d;
+  --button-secondary-text: #ffffff;
+  --toast-bg: #343a40;
+  --toast-text: #f8f9fa;
+  --code-bg: #495057;
+  --code-text: #f8f9fa;
+  --auth-bg: #0d6efd33;
+  --auth-text: #6ea8fe;
+  --delete-hover: #dc3545;
+  --error-text: #f16372;
+  --error-text-hover: #f38897;
+  --error-border: #dc3545;
+  --error-bg: #dc3545;
+  --error-bg-hover: #bb2d3b;
+  --accent-color-hover: #0b5ed7;
+}
+
+/* Base styles */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.app {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+}
+
+/* Navbar styles */
+.navbar {
+  background-color: var(--navbar-bg);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar-brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--navbar-text);
+}
+
+.navbar-menu {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navbar-item {
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 0.5rem;
+}
+
+.navbar-item:hover {
+  color: var(--text-secondary-hover);
+}
+
+.theme-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  transition: background-color 0.2s;
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--bg-secondary);
+  color: var(--accent-color);
+}
+
+/* Main content styles */
+.main-content {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Card styles */
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+/* Form styles */
+input, textarea, select {
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+/* Button styles */
+.btn-primary {
+  background-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background-color: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+/* Code block styles */
+pre, code {
+  background-color: var(--code-bg);
+  color: var(--code-text);
+  padding: 1rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+}
