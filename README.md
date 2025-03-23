@@ -24,7 +24,7 @@ Resto is a modern web application that allows you to create and manage dynamic R
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/resto.git
+git clone https://github.com/angeswe/resto.git
 cd resto
 ```
 
@@ -104,4 +104,4 @@ resto/
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the GPL-3.0 License.
