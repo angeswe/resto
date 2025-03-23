@@ -1,70 +1,107 @@
-dynamic-rest-api/
-├── client/ # Frontend React application
-│ ├── public/
-│ │ ├── index.html
-│ │ ├── favicon.ico
-│ │ └── ...
-│ ├── src/
-│ │ ├── components/
-│ │ │ ├── common/
-│ │ │ │ ├── Header.jsx
-│ │ │ │ ├── Footer.jsx
-│ │ │ │ └── Loading.jsx
-│ │ │ ├── projects/
-│ │ │ │ ├── ProjectList.jsx
-│ │ │ │ ├── ProjectCard.jsx
-│ │ │ │ └── ProjectForm.jsx
-│ │ │ ├── endpoints/
-│ │ │ │ ├── EndpointList.jsx
-│ │ │ │ ├── EndpointForm.jsx
-│ │ │ │ └── EndpointModal.jsx
-│ │ │ ├── docs/
-│ │ │ │ ├── ApiDocumentation.jsx
-│ │ │ │ ├── EndpointDocs.jsx
-│ │ │ │ └── CodeExamples.jsx
-│ │ │ ├── Home.jsx
-│ │ │ ├── ProjectCreation.jsx
-│ │ │ └── ProjectSettings.jsx
-│ │ ├── utils/
-│ │ │ ├── api.js
-│ │ │ └── helpers.js
-│ │ ├── contexts/
-│ │ │ └── AppContext.jsx
-│ │ ├── styles/
-│ │ │ └── tailwind.css
-│ │ ├── App.jsx
-│ │ ├── index.jsx
-│ │ └── setupProxy.js
-│ ├── package.json
-│ ├── tailwind.config.js
-│ └── README.md
-│
-├── server/ # Backend Node.js application
-│ ├── config/
-│ │ ├── db.js # Database configuration
-│ │ └── default.js # App configuration
-│ ├── controllers/
-│ │ ├── projectController.js
-│ │ ├── endpointController.js
-│ │ └── mockApiController.js
-│ ├── models/
-│ │ ├── Project.js
-│ │ └── Endpoint.js
-│ ├── routes/
-│ │ ├── api/
-│ │ │ ├── projects.js
-│ │ │ └── endpoints.js
-│ │ └── mockApi.js
-│ ├── utils/
-│ │ ├── randomGenerator.js
-│ │ └── responseFormatter.js
-│ ├── middleware/
-│ │ └── auth.js
-│ ├── server.js
-│ ├── package.json
-│ └── README.md
-│
-├── package.json # Root package.json for scripts
-├── .gitignore
-├── README.md
-└── docker-compose.yml # Optional for containerized deployment
+# Resto - Dynamic REST API Platform
+
+Resto is a modern web application that allows you to create and manage dynamic REST API endpoints with customizable schemas and responses.
+
+## Features
+
+- Create and manage multiple API projects
+- Define custom endpoints with dynamic response schemas
+- Support for GET, POST, PUT, DELETE methods
+- Authentication support for protected endpoints
+- Real-time endpoint testing
+- Dark/Light theme support
+- Interactive API documentation
+
+## Prerequisites
+
+- Docker and Docker Compose
+- Node.js 20.x (for local development)
+- npm or yarn
+
+## Running with Docker (Recommended)
+
+### Production Mode
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/resto.git
+cd resto
+```
+
+2. Set up environment variables:
+```bash
+# Create a secure password for MongoDB
+export MONGO_PASSWORD=your_secure_password
+```
+
+3. Build and start the containers:
+```bash
+docker compose up --build
+```
+
+The application will be available at:
+- Frontend: http://localhost
+- API: http://localhost/api
+
+### Development Mode
+
+For development with hot-reloading:
+
+1. Install dependencies:
+```bash
+npm run install:all
+```
+
+2. Start the development servers:
+```bash
+npm run dev
+```
+
+The development servers will be available at:
+- Frontend: http://localhost:5173
+- API: http://localhost:3000
+
+## Project Structure
+
+```
+resto/
+├── client/          # React frontend
+│   ├── src/
+│   │   ├── components/
+│   │   ├── contexts/
+│   │   └── styles/
+│   └── package.json
+├── server/          # Node.js backend
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   └── routes/
+│   └── package.json
+├── docker-compose.yml
+└── package.json
+```
+
+## Environment Variables
+
+### Server
+- `PORT` - Server port (default: 3000)
+- `MONGODB_URI` - MongoDB connection string
+- `NODE_ENV` - Environment (production/development)
+
+### Client
+- `VITE_API_URL` - Backend API URL (development only)
+
+### Docker
+- `MONGO_PASSWORD` - MongoDB root password
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
+
+## License
+
+This project is licensed under the MIT License.
