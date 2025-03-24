@@ -23,7 +23,7 @@ const Navbar: React.FC = () => {
               <span>Docs</span>
             </Link>
             <a 
-              href="https://github.com/codeium/resto" 
+              href="https://github.com/angeswe/resto" 
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-200"
