@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="248" fill="#6366F1" />
+  
+  <!-- API Connection Lines -->
+  <path d="M156 256C156 206 206 186 256 186C306 186 356 206 356 256C356 306 306 326 256 326C206 326 156 306 156 256Z" 
+        stroke="white" stroke-width="24" stroke-linecap="round"/>
+  
+  <!-- Request/Response Arrows -->
+  <path d="M156 216L196 256L156 296" stroke="white" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M356 216L316 256L356 296" stroke="white" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Data Points -->
+  <circle cx="256" cy="186" r="12" fill="white"/>
+  <circle cx="256" cy="326" r="12" fill="white"/>
+  <circle cx="196" cy="256" r="12" fill="white"/>
+  <circle cx="316" cy="256" r="12" fill="white"/>
+</svg>
