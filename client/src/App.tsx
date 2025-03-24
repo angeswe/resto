@@ -8,6 +8,7 @@ import ProjectList from './components/projects/ProjectList';
 import ProjectSettings from './components/projects/ProjectSettings';
 import EndpointDocs from './components/endpoints/EndpointDocs';
 import NewProject from './components/projects/NewProject';
+import NewEndpoint from './components/endpoints/NewEndpoint';
 import { AppContextProvider } from './contexts/AppContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
@@ -22,7 +23,8 @@ const App: React.FC = () => {
               <Routes>
                 <Route path="/" element={<ProjectList />} />
                 <Route path="/projects/new" element={<NewProject />} />
-                <Route path="/project/:id/settings" element={<ProjectSettings />} />
+                <Route path="/projects/:id/settings" element={<ProjectSettings />} />
+                <Route path="/projects/:projectId/endpoints/new" element={<NewEndpoint />} />
                 <Route path="/projects/:projectId/endpoints/:endpointId" element={<EndpointDocs />} />
               </Routes>
             </main>

@@ -12,7 +12,9 @@ const formatProject = (project: any) => {
     defaultSchema: project.defaultSchema,
     defaultCount: project.defaultCount,
     requireAuth: project.requireAuth,
-    apiKeys: project.apiKeys
+    apiKeys: project.apiKeys,
+    createdAt: project.createdAt,
+    updatedAt: project.updatedAt
   };
   console.log('Formatted project data:', formatted);
   return formatted;

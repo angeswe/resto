@@ -47,9 +47,9 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
     parameterPath: ':id'
   });
   const [isValidJson, setIsValidJson] = useState(true);
-  const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { theme } = useTheme();
+  const isEditing = !!endpoint;
 
   useEffect(() => {
     if (endpoint) {
@@ -92,7 +92,6 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
       return;
     }
 
-    setLoading(true);
     setIsSubmitting(true);
 
     try {
@@ -102,7 +101,6 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
       } catch {
         toast.error('Invalid JSON schema');
         setIsSubmitting(false);
-        setLoading(false);
         return;
       }
 
@@ -124,19 +122,18 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
       if (endpoint) {
         await endpointsApi.updateEndpoint(endpoint.id, endpointData);
         toast.success('Endpoint updated successfully');
+        onSuccess?.(endpointData);
       } else {
         const created = await endpointsApi.createEndpoint(projectId, endpointData);
         console.log('Created endpoint:', created);
         toast.success('Endpoint created successfully');
+        onSuccess?.(endpointData);
       }
-
-      onSuccess?.(endpointData);
       onClose?.();
     } catch (error: any) {
       console.error('Error saving endpoint:', error);
       toast.error(error.response?.data?.details || error.message || 'Failed to save endpoint');
     } finally {
-      setLoading(false);
       setIsSubmitting(false);
     }
   };
@@ -358,22 +355,48 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
         )}
       </div>
 
-      <div className="flex justify-end space-x-2 pt-4">
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-[var(--input-border)] bg-[var(--bg-primary)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]"
+      <div className="flex items-center justify-end gap-4 mt-8">
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-medium text-sm hover:text-[var(--text-primary)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--border-color)]"
+        >
+          <svg 
+            className="mr-2 h-5 w-5" 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 20 20" 
+            fill="currentColor"
           >
-            Back
-          </button>
-        )}
+            <path 
+              fillRule="evenodd" 
+              d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" 
+              clipRule="evenodd" 
+            />
+          </svg>
+          Cancel
+        </button>
         <button
           type="submit"
-          disabled={loading || isSubmitting}
-          className="rounded-md border border-transparent bg-[var(--accent-color)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-color-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]"
+          disabled={isSubmitting}
+          className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--accent-color)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Saving...' : endpoint ? 'Save' : 'Create'}
+          <svg 
+            className="mr-2 h-5 w-5" 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 20 20" 
+            fill="currentColor"
+          >
+            {isEditing ? (
+              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+            ) : (
+              <path 
+                fillRule="evenodd" 
+                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" 
+                clipRule="evenodd" 
+              />
+            )}
+          </svg>
+          {isSubmitting ? "Saving..." : (isEditing ? "Update Endpoint" : "Create Endpoint")}
         </button>
       </div>
     </form>

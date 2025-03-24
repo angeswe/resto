@@ -12,6 +12,7 @@ const api: AxiosInstance = axios.create({
 interface ApiResponse<T> {
   success: boolean;
   data: T;
+  error?: string;
 }
 
 // Projects API
@@ -20,6 +21,7 @@ export const projectsApi = {
   getProjects: async (): Promise<Project[]> => {
     try {
       const response: AxiosResponse<ApiResponse<Project[]>> = await api.get("/projects");
+      console.log('API Response:', response.data); // Debug log
       return response.data.data;
     } catch (error) {
       throw error;
@@ -109,14 +111,14 @@ export const endpointsApi = {
   createEndpoint: async (projectId: string, endpointData: EndpointData): Promise<Endpoint> => {
     try {
       console.log('API: Creating endpoint:', { projectId, endpointData });
-      const response = await api.post(`/projects/${projectId}/endpoints`, {
+      const response: AxiosResponse<ApiResponse<Endpoint>> = await api.post(`/projects/${projectId}/endpoints`, {
         ...endpointData,
         path: endpointData.path.startsWith('/') ? endpointData.path : '/' + endpointData.path,
         method: endpointData.method.toUpperCase()
       });
       console.log('API: Create response:', response.data);
       
-      if (!response.data.success) {
+      if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error || 'Failed to create endpoint');
       }
       

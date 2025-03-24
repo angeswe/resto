@@ -15,9 +15,26 @@ const Home: FC = () => {
             Build configurable mock REST APIs with dynamic data generation for
             your frontend prototyping needs. No coding required!
           </p>
-          <Link to="/projects/new" className="btn btn-primary">
-            Create Your First API
-          </Link>
+          <div className="mt-8 flex flex-wrap gap-4 justify-center">
+            <Link 
+              to="/projects/new" 
+              className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--accent-color)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]"
+            >
+              <svg 
+                className="mr-2 h-5 w-5" 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 20 20" 
+                fill="currentColor"
+              >
+                <path 
+                  fillRule="evenodd" 
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" 
+                  clipRule="evenodd" 
+                />
+              </svg>
+              Create Your First Project
+            </Link>
+          </div>
         </div>
       </div>
 

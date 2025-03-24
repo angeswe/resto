@@ -59,6 +59,49 @@ router.get('/projects/:projectId/endpoints', async (req: Request, res: Response)
   }
 });
 
+// Get a single endpoint by ID
+router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, res: Response) => {
+  try {
+    const { projectId, endpointId } = req.params;
+    
+    if (!Types.ObjectId.isValid(projectId) || !Types.ObjectId.isValid(endpointId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid ID',
+        message: 'The provided project ID or endpoint ID is not valid'
+      });
+    }
+
+    const endpoint = await Endpoint.findOne({
+      _id: new Types.ObjectId(endpointId),
+      projectId: new Types.ObjectId(projectId)
+    }).lean();
+
+    if (!endpoint) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Endpoint not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...endpoint,
+        id: endpoint._id
+      }
+    });
+  } catch (error) {
+    console.error('Error getting endpoint:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server Error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+  }
+});
+
 // Create a new endpoint
 router.post('/projects/:projectId/endpoints', async (req: Request, res: Response) => {
   try {

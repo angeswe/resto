@@ -1,6 +1,7 @@
 import React from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface CodeExamplesProps {
   endpoint: {
@@ -8,11 +9,13 @@ interface CodeExamplesProps {
     method: string;
     requireAuth: boolean;
     supportPagination: boolean;
+    schemaDefinition: object;
   };
   projectId: string;
 }
 
 const CodeExamples: React.FC<CodeExamplesProps> = ({ endpoint, projectId }) => {
+  const { theme } = useTheme();
   const baseUrl = `http://localhost:3000/mock/${projectId}${endpoint.path}`;
   
   const examples = {
@@ -30,7 +33,7 @@ const CodeExamples: React.FC<CodeExamplesProps> = ({ endpoint, projectId }) => {
   .catch(error => console.error('Error:', error));`,
     axios: `import axios from 'axios';
 
-axios.get("${baseUrl}"${endpoint.supportPagination ? ', {\n  params: { page: 1, limit: 10 }' : ''}${
+axios.${endpoint.method.toLowerCase()}("${baseUrl}"${endpoint.supportPagination ? ', {\n  params: { page: 1, limit: 10 }' : ''}${
       endpoint.requireAuth ? `${endpoint.supportPagination ? ',' : ', {\n'}  headers: {
     "X-API-Key": "YOUR_API_KEY"
   }` : ''
@@ -39,47 +42,56 @@ axios.get("${baseUrl}"${endpoint.supportPagination ? ', {\n  params: { page: 1, 
   .catch(error => console.error('Error:', error));`,
   };
 
+  const responseSchema = {
+    success: true,
+    data: endpoint.schemaDefinition
+  };
+
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">Code Examples</h3>
-      
-      <div className="space-y-4">
-        <div>
-          <h4 className="text-sm font-medium mb-2">cURL</h4>
-          <div className="bg-gray-50 rounded-md">
-            <CodeMirror
-              value={examples.curl}
-              height="auto"
-              extensions={[json()]}
-              editable={false}
-              theme="light"
-            />
+      <div>
+        <h3 className="text-lg font-semibold mb-4 text-[var(--text-primary)]">Code Examples</h3>
+        <div className="space-y-4">
+          <div>
+            <h4 className="text-sm font-medium mb-2 text-[var(--text-primary)]">cURL</h4>
+            <div className="rounded-md overflow-hidden border border-[var(--border-color)]">
+              <CodeMirror
+                value={examples.curl}
+                height="100px"
+                extensions={[json()]}
+                editable={false}
+                theme={theme === 'dark' ? 'dark' : 'light'}
+                className="!bg-[var(--bg-secondary)]"
+              />
+            </div>
           </div>
-        </div>
 
-        <div>
-          <h4 className="text-sm font-medium mb-2">Fetch</h4>
-          <div className="bg-gray-50 rounded-md">
-            <CodeMirror
-              value={examples.fetch}
-              height="auto"
-              extensions={[json()]}
-              editable={false}
-              theme="light"
-            />
+          <div>
+            <h4 className="text-sm font-medium mb-2 text-[var(--text-primary)]">Fetch</h4>
+            <div className="rounded-md overflow-hidden border border-[var(--border-color)]">
+              <CodeMirror
+                value={examples.fetch}
+                height="150px"
+                extensions={[json()]}
+                editable={false}
+                theme={theme === 'dark' ? 'dark' : 'light'}
+                className="!bg-[var(--bg-secondary)]"
+              />
+            </div>
           </div>
-        </div>
 
-        <div>
-          <h4 className="text-sm font-medium mb-2">Axios</h4>
-          <div className="bg-gray-50 rounded-md">
-            <CodeMirror
-              value={examples.axios}
-              height="auto"
-              extensions={[json()]}
-              editable={false}
-              theme="light"
-            />
+          <div>
+            <h4 className="text-sm font-medium mb-2 text-[var(--text-primary)]">Axios</h4>
+            <div className="rounded-md overflow-hidden border border-[var(--border-color)]">
+              <CodeMirror
+                value={examples.axios}
+                height="150px"
+                extensions={[json()]}
+                editable={false}
+                theme={theme === 'dark' ? 'dark' : 'light'}
+                className="!bg-[var(--bg-secondary)]"
+              />
+            </div>
           </div>
         </div>
       </div>

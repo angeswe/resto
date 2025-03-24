@@ -1,6 +1,8 @@
 # Resto - Dynamic REST API Platform
 
-Resto is a modern web application that allows you to create and manage dynamic REST API endpoints with customizable schemas and responses.
+I found myself in need of a simple and effective way to create and manage test REST API endpoints for my projects. This started as a weekend project with me and "klabbe"(calude.ai) and continued with windsurf which I had not been testing yet.
+
+Resto is a web application that allows you to create and manage dynamic REST API endpoints with customizable schemas and responses.
 
 ## Features
 
@@ -93,6 +95,18 @@ resto/
 
 ### Docker
 - `MONGO_PASSWORD` - MongoDB root password
+
+## Using the Application
+
+1. Access the application at http://localhost (or http://localhost:5173 in development mode)
+2. You'll see a list of your API projects
+3. Click on any project to view its endpoints
+4. Click on an endpoint to view its detailed documentation, which includes:
+   - API endpoint URL and method
+   - Request/response schema
+   - Authentication requirements
+   - Example requests and responses
+   - Code examples in various programming languages
 
 ## Contributing
 

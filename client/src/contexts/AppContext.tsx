@@ -27,6 +27,7 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
       setLoading(true);
       setError(null);
       const data = await projectsApi.getProjects();
+      console.log('Fetched projects:', data); // Debug log
       setProjects(data);
       return data;
     } catch (err: unknown) {
