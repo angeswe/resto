@@ -8,6 +8,7 @@ import EndpointForm from '../endpoints/EndpointForm';
 import { projectsApi } from '../../utils/api';
 import { ProjectData } from '../../types/project';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAppContext } from '../../contexts/AppContext';
 
 interface FormData {
   name: string;
@@ -39,6 +40,7 @@ const ProjectSettings: React.FC = () => {
   const [showEndpointModal, setShowEndpointModal] = useState(false);
   const [isValidJson, setIsValidJson] = useState(true);
   const { theme } = useTheme();
+  const { deleteProject } = useAppContext();
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -172,7 +174,7 @@ const ProjectSettings: React.FC = () => {
 
     try {
       if (!id) return;
-      await projectsApi.deleteProject(id);
+      await deleteProject(id);
       toast.success('Project deleted successfully');
       navigate('/');
     } catch (error) {

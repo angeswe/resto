@@ -28,12 +28,17 @@ export const getProjects = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    console.log('Fetching all projects...');
     const projects = await Project.find().populate('endpoints');
+    console.log('Found projects:', projects);
+    const formattedProjects = projects.map(formatProject);
+    console.log('Formatted projects:', formattedProjects);
     res.status(200).json({
       success: true,
-      data: projects.map(formatProject)
+      data: formattedProjects
     });
   } catch (error) {
+    console.error('Error in getProjects:', error);
     next(error instanceof Error ? error : new Error(String(error)));
   }
 };

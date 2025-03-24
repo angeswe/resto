@@ -33,13 +33,35 @@ const ProjectSchema = new Schema({
   apiKeys: {
     type: [String],
     default: []
-  },
-  endpoints: [{
-    type: Schema.Types.ObjectId,
-    ref: 'Endpoint'
-  }]
+  }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: {
+    virtuals: true,
+    transform: function(doc, ret) {
+      ret.id = ret._id;
+      delete ret._id;
+      delete ret.__v;
+      return ret;
+    }
+  },
+  toObject: {
+    virtuals: true,
+    transform: function(doc, ret) {
+      ret.id = ret._id;
+      delete ret._id;
+      delete ret.__v;
+      return ret;
+    }
+  }
+});
+
+// Virtual populate endpoints
+ProjectSchema.virtual('endpoints', {
+  ref: 'Endpoint',
+  localField: '_id',
+  foreignField: 'projectId',
+  justOne: false
 });
 
 export const Project = mongoose.model<IProject>('Project', ProjectSchema);

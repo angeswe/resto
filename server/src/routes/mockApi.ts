@@ -150,9 +150,22 @@ router.all('*', async (req: Request, res: Response) => {
     let matchedEndpoint: IEndpoint | null = null;
     let matchedParams: Record<string, string> = {};
 
-    for (const endpoint of allEndpoints) {
-      if (endpoint.method !== req.method) continue;
+    // First filter endpoints by method to avoid path matching for wrong methods
+    const methodEndpoints = allEndpoints.filter(endpoint => 
+      endpoint.method.toUpperCase() === req.method.toUpperCase()
+    );
 
+    console.log('Endpoints matching method:', {
+      method: req.method,
+      count: methodEndpoints.length,
+      endpoints: methodEndpoints.map(ep => ({
+        path: ep.path,
+        method: ep.method
+      }))
+    });
+
+    // Then try to match paths only for endpoints with the correct method
+    for (const endpoint of methodEndpoints) {
       // Get the base path without parameters
       const basePath = '/' + requestPath.split('/').filter(Boolean)[0];
       const endpointBasePath = '/' + endpoint.path.split('/').filter(Boolean)[0];
@@ -177,7 +190,8 @@ router.all('*', async (req: Request, res: Response) => {
               path: endpoint.path,
               parameterPath: endpoint.parameterPath,
               requestPath,
-              params
+              params,
+              method: endpoint.method
             });
             break;
           }
@@ -191,7 +205,8 @@ router.all('*', async (req: Request, res: Response) => {
           console.log('Found matching endpoint with base path:', {
             path: endpoint.path,
             requestPath,
-            params
+            params,
+            method: endpoint.method
           });
           break;
         }
@@ -225,25 +240,20 @@ router.all('*', async (req: Request, res: Response) => {
     if (matchedEndpoint.delay > 0) {
       await new Promise(resolve => setTimeout(resolve, matchedEndpoint.delay));
     }
-    console.log('matchedEndpoint', matchedEndpoint);
-    // Generate mock data
-    const data = DataGenerator.generate(matchedEndpoint.schemaDefinition, matchedEndpoint.responseType === 'single' ? 1 : matchedEndpoint.count);
-    // For single response type, ensure path parameters are included in the response
-    if (matchedEndpoint.responseType === 'single' && Object.keys(matchedParams).length > 0) {
-      console.log('matchedParams', matchedParams);
-      const schema = matchedEndpoint.schemaDefinition;
-      const singleData = Array.isArray(data) ? data[0] : data;
-      // Add path parameters to the response data
-      Object.entries(matchedParams).forEach(([paramName, paramValue]) => {
-        console.log('schema', schema);
-        console.log('schema.properties', schema.properties);
-        if (schema && typeof schema === 'object') {
-          const paramSchema = schema[paramName];
-          console.log('paramSchema', paramSchema);
-          (singleData as Record<string, unknown>)[paramName] = paramValue;
-        }
-      });
 
+    console.log('Generating response:', {
+      method: req.method,
+      responseType: matchedEndpoint.responseType,
+      schema: matchedEndpoint.schemaDefinition
+    });
+
+    // Generate mock data
+    const data = DataGenerator.generate(matchedEndpoint.schemaDefinition, 1);
+
+    // For GET requests with list response type, generate multiple items
+    if (req.method === 'GET' && matchedEndpoint.responseType === 'list') {
+      const listData = DataGenerator.generate(matchedEndpoint.schemaDefinition, matchedEndpoint.count);
+      
       // Handle pagination if supported
       if (matchedEndpoint.supportPagination) {
         const page = parseInt(req.query.page as string) || 1;
@@ -251,22 +261,38 @@ router.all('*', async (req: Request, res: Response) => {
         const startIndex = (page - 1) * limit;
         const endIndex = page * limit;
 
-        const paginatedData = Array.isArray(data) ? data.slice(startIndex, endIndex) : data;
-        
         return res.json({
-          data: paginatedData,
+          data: listData.slice(startIndex, endIndex),
           pagination: {
             page,
             limit,
-            total: Array.isArray(data) ? data.length : 1
+            total: listData.length
           }
         });
       }
-      console.log("singleData", singleData);
-      return res.json(singleData);
+
+      return res.json(listData);
     }
 
-    res.json(data);
+    // For all other cases (POST/PUT/PATCH or single response type), return a single item
+    const singleData = Array.isArray(data) ? data[0] : data;
+
+    // Add path parameters to the response data if they exist
+    if (Object.keys(matchedParams).length > 0) {
+      Object.entries(matchedParams).forEach(([paramName, paramValue]) => {
+        if (matchedEndpoint.schemaDefinition && typeof matchedEndpoint.schemaDefinition === 'object') {
+          (singleData as Record<string, unknown>)[paramName] = paramValue;
+        }
+      });
+    }
+
+    console.log('Sending response:', {
+      method: req.method,
+      responseType: matchedEndpoint.responseType,
+      data: singleData
+    });
+
+    res.json(singleData);
   } catch (err) {
     console.error('Error in mock API:', err);
     res.status(500).json({
