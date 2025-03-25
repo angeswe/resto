@@ -85,16 +85,16 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
             to={`/projects/${projectId}/endpoints/new`}
             className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--accent-color)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]"
           >
-            <svg 
-              className="mr-2 h-5 w-5" 
-              xmlns="http://www.w3.org/2000/svg" 
-              viewBox="0 0 20 20" 
+            <svg
+              className="mr-2 h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
               fill="currentColor"
             >
-              <path 
-                fillRule="evenodd" 
-                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" 
-                clipRule="evenodd" 
+              <path
+                fillRule="evenodd"
+                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                clipRule="evenodd"
               />
             </svg>
             Create Endpoint
@@ -116,16 +116,19 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded ${
-                      endpoint.method === 'GET' ? 'bg-green-100 text-green-800' :
-                      endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800' :
-                      endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-800' :
-                      endpoint.method === 'DELETE' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded ${endpoint.method === 'GET' ? 'bg-green-100 text-green-800' :
+                        endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800' :
+                          endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-800' :
+                            endpoint.method === 'DELETE' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                      }`}>
                       {endpoint.method}
                     </span>
-                    <h3 className="text-lg font-medium text-[var(--text-primary)]">{endpoint.path}</h3>
+                    <h3 className="text-lg font-medium text-[var(--text-primary)]">
+                      <Link to={`/projects/${projectId}/endpoints/${endpoint.id}`} className="hover:text-[var(--accent-color)]">
+                        {endpoint.path}
+                      </Link>
+                    </h3>
                   </div>
                   <p className="mt-1 text-sm text-[var(--text-secondary)]">
                     Response Type: {endpoint.responseType}

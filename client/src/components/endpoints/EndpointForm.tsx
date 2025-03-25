@@ -85,7 +85,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Prevent double submission
     if (isSubmitting) {
       console.log('Form is already submitting, preventing double submission');
@@ -103,7 +103,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
         setIsSubmitting(false);
         return;
       }
-
+      // TODO: add http status (201, 200 etc)
       const endpointData: EndpointData = {
         path: formData.path,
         method: formData.method.toUpperCase() as EndpointMethod,
@@ -361,16 +361,16 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
           onClick={onClose}
           className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-medium text-sm hover:text-[var(--text-primary)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--border-color)]"
         >
-          <svg 
-            className="mr-2 h-5 w-5" 
-            xmlns="http://www.w3.org/2000/svg" 
-            viewBox="0 0 20 20" 
+          <svg
+            className="mr-2 h-5 w-5"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
             fill="currentColor"
           >
-            <path 
-              fillRule="evenodd" 
-              d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" 
-              clipRule="evenodd" 
+            <path
+              fillRule="evenodd"
+              d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z"
+              clipRule="evenodd"
             />
           </svg>
           Cancel
@@ -380,19 +380,19 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
           disabled={isSubmitting}
           className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--accent-color)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <svg 
-            className="mr-2 h-5 w-5" 
-            xmlns="http://www.w3.org/2000/svg" 
-            viewBox="0 0 20 20" 
+          <svg
+            className="mr-2 h-5 w-5"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
             fill="currentColor"
           >
             {isEditing ? (
-              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
             ) : (
-              <path 
-                fillRule="evenodd" 
-                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" 
-                clipRule="evenodd" 
+              <path
+                fillRule="evenodd"
+                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                clipRule="evenodd"
               />
             )}
           </svg>
