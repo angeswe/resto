@@ -30,7 +30,7 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
       // Use the same backend URL as the rest of the application
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
       let url = `${baseUrl}/mock/${projectId}${endpoint.path}`;
-      
+
       // Only append parameter path for single-item endpoints
       if (endpoint.responseType === 'single') {
         url += `/${endpoint.parameterPath}`;
@@ -40,9 +40,9 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
         }
       }
 
-      console.log('Testing endpoint:', { 
-        url, 
-        method: endpoint.method, 
+      console.log('Testing endpoint:', {
+        url,
+        method: endpoint.method,
         path: endpoint.path,
         body: requestBody
       });
@@ -70,6 +70,7 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
       if (!response.ok) {
         throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
+      // TODO: return pagination if there is any
       console.log('Test response:', data);
       setResponse(data.data || data);
     } catch (error) {

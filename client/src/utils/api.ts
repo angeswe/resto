@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 import { Project, ProjectData, Endpoint, EndpointData } from "../types/project";
 
-// Create an axios instance with default configuration
+// TODO: remove hardcoded API URL
 const api: AxiosInstance = axios.create({
   baseURL: "http://localhost:3000/api",
   headers: {
@@ -50,11 +50,11 @@ export const projectsApi = {
       console.log('API: Creating project with data:', projectData);
       const response: AxiosResponse<ApiResponse<Project>> = await api.post('/projects', projectData);
       console.log('API: Received response:', response.data);
-      
+
       if (!response.data.success || !response.data.data) {
         throw new Error('Failed to create project');
       }
-      
+
       return response.data.data;
     } catch (error) {
       console.error('API Error:', error);
@@ -117,11 +117,11 @@ export const endpointsApi = {
         method: endpointData.method.toUpperCase()
       });
       console.log('API: Create response:', response.data);
-      
+
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error || 'Failed to create endpoint');
       }
-      
+
       return response.data.data;
     } catch (error) {
       console.error('API Error:', error);
@@ -135,11 +135,11 @@ export const endpointsApi = {
       console.log('API: Updating endpoint:', endpointId, endpointData);
       const response: AxiosResponse<ApiResponse<Endpoint>> = await api.put(`/endpoints/${endpointId}`, endpointData);
       console.log('API: Update response:', response.data);
-      
+
       if (!response.data.success) {
         throw new Error('Failed to update endpoint');
       }
-      
+
       return response.data.data;
     } catch (error) {
       console.error('API Error:', error);

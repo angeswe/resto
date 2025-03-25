@@ -1,6 +1,6 @@
 # Resto - Dynamic REST API Platform
 
-I found myself in need of a simple and effective way to create and manage test REST API endpoints for my projects. This started as a weekend project with me and "klabbe"(calude.ai) and continued with windsurf which I had not been testing yet.
+I found myself in need of a simple and effective way to create and manage test REST API endpoints for my projects.
 
 Resto is a web application that allows you to create and manage dynamic REST API endpoints with customizable schemas and responses.
 
@@ -19,6 +19,7 @@ Resto is a web application that allows you to create and manage dynamic REST API
 - Docker and Docker Compose
 - Node.js 20.x (for local development)
 - npm or yarn
+- MongoDB
 
 ## Running with Docker (Recommended)
 

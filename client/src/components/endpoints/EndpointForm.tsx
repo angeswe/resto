@@ -269,6 +269,8 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
               name="supportPagination"
               checked={formData.supportPagination}
               onChange={handleChange}
+              disabled={true}
+              title="Pagination is a feature for the future"
               className="h-4 w-4 text-[var(--accent-color)] focus:ring-[var(--accent-color)] border-[var(--input-border)] rounded"
             />
             <label className="ml-2 block text-sm text-[var(--text-primary)]">Support Pagination</label>
