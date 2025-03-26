@@ -11,8 +11,12 @@ const router = express.Router();
 
 // Match URL path with endpoint path pattern
 function matchPathPattern(urlPath: string, endpointPath: string): { matches: boolean; params: Record<string, string> } {
-  const urlParts = urlPath.split('/').filter(Boolean);
-  const endpointParts = endpointPath.split('/').filter(Boolean);
+  // Sanitize inputs
+  const sanitizedUrlPath = urlPath.replace(/[^\w\-\/]/g, '');
+  const sanitizedEndpointPath = endpointPath.replace(/[^\w\-\/:]/g, '');
+
+  const urlParts = sanitizedUrlPath.split('/').filter(Boolean);
+  const endpointParts = sanitizedEndpointPath.split('/').filter(Boolean);
 
   console.log('Path matching:', {
     urlPath,
@@ -66,8 +70,12 @@ function matchPathPattern(urlPath: string, endpointPath: string): { matches: boo
 
 // Extract path parameters from URL path
 function extractPathParameters(urlPath: string, endpointPath: string): Record<string, string> {
-  const urlParts = urlPath.split('/').filter(Boolean);
-  const endpointParts = endpointPath.split('/').filter(Boolean);
+  // Sanitize inputs
+  const sanitizedUrlPath = urlPath.replace(/[^\w\-\/]/g, '');
+  const sanitizedEndpointPath = endpointPath.replace(/[^\w\-\/:]/g, '');
+
+  const urlParts = sanitizedUrlPath.split('/').filter(Boolean);
+  const endpointParts = sanitizedEndpointPath.split('/').filter(Boolean);
   const params: Record<string, string> = {};
 
   for (let i = 0; i < endpointParts.length; i++) {
@@ -109,6 +117,14 @@ router.get('/debug', async (req: Request, res: Response) => {
 // Handle all requests to mock API endpoints
 router.all('*', async (req: Request, res: Response) => {
   try {
+    // Validate projectId
+    if (!req.projectId || !Types.ObjectId.isValid(req.projectId.toString())) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Invalid project ID format'
+      });
+    }
+
     console.log('Mock API request received:', {
       url: req.url,
       originalUrl: req.originalUrl,
@@ -120,7 +136,7 @@ router.all('*', async (req: Request, res: Response) => {
       query: req.query,
       method: req.method
     });
-    // TODO: should we handle count on POST?
+
     // Find matching endpoint and project
     const [endpoints, project] = await Promise.all([
       Endpoint.find({ projectId: req.projectId }).lean(),
@@ -196,21 +212,40 @@ router.all('*', async (req: Request, res: Response) => {
       await new Promise(resolve => setTimeout(resolve, matchedEndpoint.delay));
     }
 
+    // Validate schema before generating data
+    console.log('Schema to validate:', JSON.stringify(matchedEndpoint.schemaDefinition, null, 2));
+    if (!isValidSchema(matchedEndpoint.schemaDefinition)) {
+      console.error('Invalid schema detected');
+      return res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'Invalid schema definition'
+      });
+    }
+
     // Generate response data
     let responseData;
 
     // For GET requests with list response type
     if (req.method === 'GET' && matchedEndpoint.responseType === 'list') {
-      const count = matchedEndpoint.count || 10;
+      const maxCount = 100; // Add a reasonable limit
+      const count = Math.min(matchedEndpoint.count || 10, maxCount);
 
       if (matchedEndpoint.supportPagination) {
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || count;
-        const totalItems = count;
-        const totalPages = Math.ceil(totalItems / limit);
+        const page = Math.max(1, Math.min(parseInt(req.query.page as string) || 1, 1000)); // Add upper bound
+        const limit = Math.max(1, Math.min(parseInt(req.query.limit as string) || count, maxCount)); // Add bounds
+        const totalItems = Math.min(count, maxCount);
         const startIndex = (page - 1) * limit;
         const endIndex = Math.min(startIndex + limit, totalItems);
         const itemsToGenerate = endIndex - startIndex;
+
+        console.log('Generating paginated data:', {
+          page,
+          limit,
+          totalItems,
+          startIndex,
+          endIndex,
+          itemsToGenerate
+        });
 
         responseData = {
           data: DataGenerator.generate(matchedEndpoint.schemaDefinition, itemsToGenerate),
@@ -218,14 +253,16 @@ router.all('*', async (req: Request, res: Response) => {
             page,
             limit,
             totalItems,
-            totalPages
+            totalPages: Math.ceil(totalItems / limit)
           }
         };
       } else {
+        console.log('Generating list data with count:', count);
         responseData = DataGenerator.generate(matchedEndpoint.schemaDefinition, count);
       }
     } else {
       // For all other cases (single GET, POST, PUT, DELETE)
+      console.log('Generating single response data');
       responseData = DataGenerator.generate(matchedEndpoint.schemaDefinition, 1);
       if (Array.isArray(responseData)) {
         responseData = responseData[0];
@@ -236,18 +273,106 @@ router.all('*', async (req: Request, res: Response) => {
       }
     }
 
+    console.log('Generated response data:', JSON.stringify(responseData, null, 2));
+
     // Send response
     const method = req.method as HttpMethod;
-    const statusCode = parseInt(matchedEndpoint.responseHttpStatus || getDefaultSuccessStatusCode(method).toString());
+    let statusCode: number;
+    try {
+      const defaultStatus = getDefaultSuccessStatusCode(method);
+      statusCode = parseInt(matchedEndpoint.responseHttpStatus || defaultStatus.toString());
+    } catch (e) {
+      console.error('Error parsing status code:', e);
+      statusCode = 500;
+    }
+    
+    // Validate status code
+    const validStatusCodes = METHOD_STATUS_CODES[method].map(s => parseInt(s.code));
+    if (!validStatusCodes.includes(statusCode)) {
+      console.error(`Invalid status code ${statusCode} for method ${method}`);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'Invalid status code configuration'
+      });
+      return;
+    }
+
     res.status(statusCode).json(responseData);
 
   } catch (err) {
     console.error('Error in mock API:', err);
+    // Don't expose internal error details
     res.status(500).json({
       error: 'Internal Server Error',
-      message: err instanceof Error ? err.message : 'Unknown error occurred'
+      message: 'An unexpected error occurred'
     });
   }
 });
+
+// Add schema validation helper
+function isValidSchema(schema: Schema | Schema[]): boolean {
+  try {
+    if (!schema) {
+      console.log('Schema is null or undefined');
+      return false;
+    }
+
+    // Handle array of schemas
+    if (Array.isArray(schema)) {
+      console.log('Validating array of schemas');
+      return schema.every(s => isValidSchema(s));
+    }
+
+    // For each property in the schema, validate its value
+    for (const [key, value] of Object.entries(schema)) {
+      console.log(`Validating schema property "${key}" with value:`, value);
+      
+      if (value === null) {
+        console.log('Value is null - continuing');
+        continue;
+      }
+      
+      // Handle nested objects
+      if (typeof value === 'object' && !Array.isArray(value)) {
+        console.log('Validating nested object');
+        if (!isValidSchema(value as Schema)) {
+          console.log('Nested object validation failed');
+          return false;
+        }
+        continue;
+      }
+      
+      // Handle arrays of schemas
+      if (Array.isArray(value)) {
+        console.log('Validating array value');
+        if (!value.every(v => isValidSchema(v as Schema))) {
+          console.log('Array validation failed');
+          return false;
+        }
+        continue;
+      }
+
+      // Handle primitive types and random functions
+      if (typeof value === 'string') {
+        if (value.startsWith('(random:')) {
+          console.log('Validating random function string');
+          const match = value.match(/^\(random:(\w+)\)$/);
+          if (!match) {
+            console.log('Invalid random function format');
+            return false;
+          }
+        }
+      } else if (!['number', 'boolean', 'string'].includes(typeof value)) {
+        console.log(`Invalid value type: ${typeof value}`);
+        return false;
+      }
+    }
+    console.log('Schema validation passed');
+    return true;
+  } catch (error) {
+    console.error('Schema validation error:', error);
+    return false;
+  }
+}
 
 export default router;
