@@ -5,6 +5,8 @@ import { json } from '@codemirror/lang-json';
 import CodeExamples from './CodeExamples';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ArrowLeftIcon } from '@heroicons/react/24/solid';
+import { ClipboardIcon } from '@heroicons/react/24/outline';
+import { METHOD_STATUS_CODES } from '../../types/http';
 
 interface Endpoint {
   path: string;
@@ -14,6 +16,8 @@ interface Endpoint {
   supportPagination: boolean;
   requireAuth: boolean;
   delay: number;
+  responseHttpStatus: string;
+  projectId: string;
 }
 
 const EndpointDocs: React.FC = () => {
@@ -22,6 +26,7 @@ const EndpointDocs: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { theme } = useTheme();
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchEndpoint = async () => {
@@ -113,6 +118,15 @@ const EndpointDocs: React.FC = () => {
       }
     : generateExampleValue(endpoint.schemaDefinition);
 
+  const fullPath = endpoint ? `http://localhost:3000/mock/${endpoint.projectId}${endpoint.path}` : '';
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(fullPath).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   return (
     <div className="space-y-8 p-6">
       <div className="flex items-center gap-4">
@@ -130,6 +144,25 @@ const EndpointDocs: React.FC = () => {
         
         <div className="space-y-6">
           <div>
+            <h3 className="text-lg font-medium text-[var(--text-primary)]">Full URL</h3>
+            <div className="mt-2 flex items-center gap-2 p-3 bg-[var(--bg-secondary)] rounded-md border border-[var(--border-color)]">
+              <a href={fullPath} target="_blank" rel="noopener noreferrer" className="font-mono text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+                {fullPath}
+              </a>
+              <button
+                onClick={copyToClipboard}
+                className="p-1 hover:bg-[var(--bg-hover)] rounded transition-colors"
+                title="Copy to clipboard"
+              >
+                <ClipboardIcon className="h-4 w-4 text-[var(--text-secondary)]" />
+              </button>
+              {copied && (
+                <span className="text-xs text-green-500 dark:text-green-400">Copied!</span>
+              )}
+            </div>
+          </div>
+
+          <div>
             <h3 className="text-lg font-medium text-[var(--text-primary)]">Endpoint Details</h3>
             <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
               <div>
@@ -143,6 +176,12 @@ const EndpointDocs: React.FC = () => {
               <div>
                 <dt className="text-sm font-medium text-[var(--text-secondary)]">Items Count</dt>
                 <dd className="mt-1 text-sm text-[var(--text-primary)]">{endpoint.count}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-[var(--text-secondary)]">Status Code</dt>
+                <dd className="mt-1 text-sm text-[var(--text-primary)]">
+                  <span className="font-mono">{endpoint.responseHttpStatus}</span> ({METHOD_STATUS_CODES[endpoint.method as keyof typeof METHOD_STATUS_CODES].find(s => s.code === endpoint.responseHttpStatus)?.text})
+                </dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-[var(--text-secondary)]">Response Delay</dt>

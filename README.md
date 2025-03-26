@@ -104,6 +104,11 @@ resto/
 3. Click on any project to view its endpoints
 4. Click on an endpoint to view its detailed documentation, which includes:
    - API endpoint URL and method
+   - Response status codes:
+     - GET: 200 (OK), 206 (Partial Content), 304 (Not Modified), 400 (Bad Request), 401 (Unauthorized), 403 (Forbidden), 404 (Not Found), 500 (Internal Server Error), 503 (Service Unavailable)
+     - POST: 201 (Created), 202 (Accepted), 400 (Bad Request), 401 (Unauthorized), 403 (Forbidden), 409 (Conflict), 500 (Internal Server Error)
+     - PUT: 200 (OK), 201 (Created), 204 (No Content), 400 (Bad Request), 401 (Unauthorized), 403 (Forbidden), 404 (Not Found), 409 (Conflict), 500 (Internal Server Error)
+     - DELETE: 200 (OK), 204 (No Content), 400 (Bad Request), 401 (Unauthorized), 403 (Forbidden), 404 (Not Found), 500 (Internal Server Error)
    - Request/response schema
    - Authentication requirements
    - Example requests and responses

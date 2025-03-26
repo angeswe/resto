@@ -51,11 +51,11 @@ const ProjectSettings: React.FC = () => {
           navigate('/');
           return;
         }
-        
+
         console.log('Fetching project with ID:', id);
         const data = await projectsApi.getProject(id);
         console.log('Received project data:', data);
-        
+
         if (!data) {
           console.error('No project data received');
           toast.error('Failed to load project');
@@ -66,7 +66,7 @@ const ProjectSettings: React.FC = () => {
         const formattedData = {
           name: data.name || '',
           description: data.description || '',
-          defaultSchema: typeof data.defaultSchema === 'object' 
+          defaultSchema: typeof data.defaultSchema === 'object'
             ? JSON.stringify(data.defaultSchema, null, 2)
             : JSON.stringify(defaultJsonSchema, null, 2),
           defaultCount: data.defaultCount || 10,
@@ -299,7 +299,7 @@ const ProjectSettings: React.FC = () => {
                 </div>
               </div>
             </div>
-
+            {/* TODO: all endpoints should be protected by API key authentication if this is enabled */}
             {formData.requireAuth && (
               <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start">
                 <label
@@ -343,16 +343,16 @@ const ProjectSettings: React.FC = () => {
                     onClick={addApiKey}
                     className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--accent-color)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]"
                   >
-                    <svg 
-                      className="mr-2 h-5 w-5" 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      viewBox="0 0 20 20" 
+                    <svg
+                      className="mr-2 h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
                       fill="currentColor"
                     >
-                      <path 
-                        fillRule="evenodd" 
-                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" 
-                        clipRule="evenodd" 
+                      <path
+                        fillRule="evenodd"
+                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                        clipRule="evenodd"
                       />
                     </svg>
                     Add API Key
@@ -368,16 +368,16 @@ const ProjectSettings: React.FC = () => {
                   onClick={handleDelete}
                   className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--error-bg)] text-white font-medium text-sm hover:bg-[var(--error-bg-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--error-border)]"
                 >
-                  <svg 
-                    className="mr-2 h-5 w-5" 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    viewBox="0 0 20 20" 
+                  <svg
+                    className="mr-2 h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
                     fill="currentColor"
                   >
-                    <path 
-                      fillRule="evenodd" 
-                      d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" 
-                      clipRule="evenodd" 
+                    <path
+                      fillRule="evenodd"
+                      d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                      clipRule="evenodd"
                     />
                   </svg>
                   Delete Project
@@ -386,16 +386,16 @@ const ProjectSettings: React.FC = () => {
                   type="submit"
                   className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--accent-color)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]"
                 >
-                  <svg 
-                    className="mr-2 h-5 w-5" 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    viewBox="0 0 20 20" 
+                  <svg
+                    className="mr-2 h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
                     fill="currentColor"
                   >
-                    <path 
-                      fillRule="evenodd" 
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" 
-                      clipRule="evenodd" 
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
                     />
                   </svg>
                   Save Changes

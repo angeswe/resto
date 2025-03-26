@@ -1,9 +1,11 @@
 import express, { Request, Response, Router } from 'express';
 import { DataGenerator } from '../utils/dataGenerator';
 import { Endpoint } from '../models/Endpoint';
+import { Project } from '../models/Project';
 import { IEndpoint } from '../types';
 import { Schema } from '../utils/dataGenerator';
 import { Types } from 'mongoose';
+import { isValidStatusCodeForMethod, getDefaultSuccessStatusCode, METHOD_STATUS_CODES, HttpMethod } from '../types/http';
 
 const router = express.Router();
 
@@ -26,8 +28,8 @@ function matchPathPattern(urlPath: string, endpointPath: string): { matches: boo
     const paramValue = urlParts[urlParts.length - 1];
     if (paramValue) {
       console.log('Parameter match:', { paramName, paramValue });
-      return { 
-        matches: true, 
+      return {
+        matches: true,
         params: { [paramName]: paramValue }
       };
     }
@@ -37,11 +39,11 @@ function matchPathPattern(urlPath: string, endpointPath: string): { matches: boo
   if (urlParts.length === endpointParts.length) {
     const params: Record<string, string> = {};
     let matches = true;
-    
+
     for (let i = 0; i < endpointParts.length; i++) {
       const endpointPart = endpointParts[i];
       const urlPart = urlParts[i];
-      
+
       if (endpointPart.startsWith(':')) {
         // This is a parameter
         const paramName = endpointPart.slice(1);
@@ -60,6 +62,26 @@ function matchPathPattern(urlPath: string, endpointPath: string): { matches: boo
   }
   console.log('No match found');
   return { matches: false, params: {} };
+}
+
+// Extract path parameters from URL path
+function extractPathParameters(urlPath: string, endpointPath: string): Record<string, string> {
+  const urlParts = urlPath.split('/').filter(Boolean);
+  const endpointParts = endpointPath.split('/').filter(Boolean);
+  const params: Record<string, string> = {};
+
+  for (let i = 0; i < endpointParts.length; i++) {
+    const endpointPart = endpointParts[i];
+    const urlPart = urlParts[i];
+
+    if (endpointPart.startsWith(':')) {
+      // This is a parameter
+      const paramName = endpointPart.slice(1);
+      params[paramName] = urlPart;
+    }
+  }
+
+  return params;
 }
 
 // Debug route to list all endpoints
@@ -98,201 +120,127 @@ router.all('*', async (req: Request, res: Response) => {
       query: req.query,
       method: req.method
     });
+    // TODO: should we handle count on POST?
+    // Find matching endpoint and project
+    const [endpoints, project] = await Promise.all([
+      Endpoint.find({ projectId: req.projectId }).lean(),
+      Project.findById(req.projectId).lean()
+    ]);
 
-    const projectId = req.projectId;
-    if (!projectId) {
-      console.error('No projectId in params:', req.params);
-      return res.status(400).json({
-        error: 'Missing Project ID',
-        message: 'Project ID is required'
+    if (!project) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Project not found'
       });
     }
 
-    // Convert projectId to proper MongoDB ObjectId format
-    let projectObjectId: Types.ObjectId;
-    try {
-      projectObjectId = new Types.ObjectId(projectId);
-      console.log('Converted projectId to ObjectId:', {
-        raw: projectId,
-        objectId: projectObjectId.toString()
-      });
-    } catch (err) {
-      console.error('Invalid projectId format:', projectId);
-      return res.status(400).json({
-        error: 'Invalid Project ID',
-        message: 'The provided project ID format is invalid'
-      });
-    }
-
-    // Get the actual path from the mockPath set by middleware
-    const requestPath = req.mockPath || '';
-    console.log('Request path info:', {
-      originalUrl: req.originalUrl,
-      baseUrl: req.baseUrl,
-      path: req.path,
-      mockPath: req.mockPath,
-      params: req.params,
-      extractedPath: requestPath
-    });
-
-    // Debug: List all endpoints in the project
-    const allEndpoints = await Endpoint.find({ projectId: projectObjectId }).lean() as IEndpoint[];
-    console.log('All endpoints in project:', allEndpoints.map(ep => ({
-      path: ep.path,
-      method: ep.method,
-      id: ep._id.toString(),
-      projectId: ep.projectId.toString(),
-      parameterPath: ep.parameterPath,
-      responseType: ep.responseType
-    })));
-
-    // Find the matching endpoint by checking path patterns
     let matchedEndpoint: IEndpoint | null = null;
-    let matchedParams: Record<string, string> = {};
+    let pathParams: Record<string, string> = {};
 
-    // First filter endpoints by method to avoid path matching for wrong methods
-    const methodEndpoints = allEndpoints.filter(endpoint => 
-      endpoint.method.toUpperCase() === req.method.toUpperCase()
-    );
-
-    console.log('Endpoints matching method:', {
-      method: req.method,
-      count: methodEndpoints.length,
-      endpoints: methodEndpoints.map(ep => ({
-        path: ep.path,
-        method: ep.method
-      }))
-    });
-
-    // Then try to match paths only for endpoints with the correct method
-    for (const endpoint of methodEndpoints) {
-      // Get the base path without parameters
-      const basePath = '/' + requestPath.split('/').filter(Boolean)[0];
-      const endpointBasePath = '/' + endpoint.path.split('/').filter(Boolean)[0];
-
-      console.log('Comparing paths:', {
-        basePath,
-        endpointBasePath,
-        requestPath,
-        endpointPath: endpoint.path,
-        parameterPath: endpoint.parameterPath
-      });
-
-      // First ensure base paths match
-      if (basePath === endpointBasePath) {
-        // If we have a parameter path, try that first
-        if (endpoint.parameterPath) {
-          const { matches: paramMatches, params } = matchPathPattern(requestPath, endpoint.parameterPath);
-          if (paramMatches) {
+    // First try to match with parameter paths
+    for (const endpoint of endpoints) {
+      if (endpoint.method === req.method) {
+        // For single GET endpoints, first try to match the parameter path
+        if (req.method === 'GET' && endpoint.responseType === 'single' && endpoint.parameterPath) {
+          const { matches, params } = matchPathPattern(req.mockPath || '', endpoint.parameterPath);
+          if (matches) {
             matchedEndpoint = endpoint;
-            matchedParams = params;
-            console.log('Found matching endpoint with parameter path:', {
-              path: endpoint.path,
-              parameterPath: endpoint.parameterPath,
-              requestPath,
-              params,
-              method: endpoint.method
-            });
+            pathParams = params;
             break;
           }
         }
-
-        // If no parameter path or it didn't match, try the base path
-        const { matches: baseMatches, params } = matchPathPattern(requestPath, endpoint.path);
-        if (baseMatches) {
-          matchedEndpoint = endpoint;
-          matchedParams = params;
-          console.log('Found matching endpoint with base path:', {
-            path: endpoint.path,
-            requestPath,
-            params,
-            method: endpoint.method
-          });
-          break;
+        // If no match found with parameter path or not a single GET, try the regular path
+        if (!matchedEndpoint) {
+          const { matches, params } = matchPathPattern(req.mockPath || '', endpoint.path);
+          if (matches) {
+            matchedEndpoint = endpoint;
+            // Only extract parameters from paths that contain parameters
+            if (endpoint.path.includes(':')) {
+              pathParams = extractPathParameters(req.mockPath || '', endpoint.path);
+            }
+            break;
+          }
         }
       }
     }
 
     if (!matchedEndpoint) {
-      console.log('No endpoint found for:', { 
-        projectId: projectObjectId.toString(), 
-        path: requestPath,
-        method: req.method 
-      });
       return res.status(404).json({
         error: 'Not Found',
-        message: `No endpoint found for ${req.method} ${requestPath}`
+        message: `No endpoint found matching ${req.method} ${req.mockPath}`
       });
     }
 
-    // Check if authentication is required
+    // Check authentication if required
     if (matchedEndpoint.requireAuth) {
       const apiKey = req.headers['x-api-key'];
-      if (!apiKey || !matchedEndpoint.apiKeys.includes(apiKey as string)) {
+
+      if (!apiKey) {
         return res.status(401).json({
           error: 'Unauthorized',
-          message: 'Invalid or missing API key'
+          message: 'API key is required for this endpoint'
+        });
+      }
+
+      // Check if the API key is valid for the project
+      if (!project.apiKeys.includes(apiKey as string)) {
+        return res.status(401).json({
+          error: 'Unauthorized',
+          message: 'Invalid API key'
         });
       }
     }
 
-    // Add artificial delay if specified
+    // Handle delay if specified
     if (matchedEndpoint.delay > 0) {
       await new Promise(resolve => setTimeout(resolve, matchedEndpoint.delay));
     }
 
-    console.log('Generating response:', {
-      method: req.method,
-      responseType: matchedEndpoint.responseType,
-      schema: matchedEndpoint.schemaDefinition
-    });
+    // Generate response data
+    let responseData;
 
-    // Generate mock data
-    const data = DataGenerator.generate(matchedEndpoint.schemaDefinition, 1);
-
-    // For GET requests with list response type, generate multiple items
+    // For GET requests with list response type
     if (req.method === 'GET' && matchedEndpoint.responseType === 'list') {
-      const listData = DataGenerator.generate(matchedEndpoint.schemaDefinition, matchedEndpoint.count);
-      
-      // Handle pagination if supported
+      const count = matchedEndpoint.count || 10;
+
       if (matchedEndpoint.supportPagination) {
         const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 10;
+        const limit = parseInt(req.query.limit as string) || count;
+        const totalItems = count;
+        const totalPages = Math.ceil(totalItems / limit);
         const startIndex = (page - 1) * limit;
-        const endIndex = page * limit;
+        const endIndex = Math.min(startIndex + limit, totalItems);
+        const itemsToGenerate = endIndex - startIndex;
 
-        return res.json({
-          data: listData.slice(startIndex, endIndex),
+        responseData = {
+          data: DataGenerator.generate(matchedEndpoint.schemaDefinition, itemsToGenerate),
           pagination: {
             page,
             limit,
-            total: listData.length
+            totalItems,
+            totalPages
           }
-        });
+        };
+      } else {
+        responseData = DataGenerator.generate(matchedEndpoint.schemaDefinition, count);
       }
-
-      return res.json(listData);
+    } else {
+      // For all other cases (single GET, POST, PUT, DELETE)
+      responseData = DataGenerator.generate(matchedEndpoint.schemaDefinition, 1);
+      if (Array.isArray(responseData)) {
+        responseData = responseData[0];
+      }
+      // Add path parameters to the response if they exist
+      if (Object.keys(pathParams).length > 0) {
+        responseData = { ...responseData, ...pathParams };
+      }
     }
 
-    // For all other cases (POST/PUT/PATCH or single response type), return a single item
-    const singleData = Array.isArray(data) ? data[0] : data;
+    // Send response
+    const method = req.method as HttpMethod;
+    const statusCode = parseInt(matchedEndpoint.responseHttpStatus || getDefaultSuccessStatusCode(method).toString());
+    res.status(statusCode).json(responseData);
 
-    // Add path parameters to the response data if they exist
-    if (Object.keys(matchedParams).length > 0) {
-      Object.entries(matchedParams).forEach(([paramName, paramValue]) => {
-        if (matchedEndpoint.schemaDefinition && typeof matchedEndpoint.schemaDefinition === 'object') {
-          (singleData as Record<string, unknown>)[paramName] = paramValue;
-        }
-      });
-    }
-
-    console.log('Sending response:', {
-      method: req.method,
-      responseType: matchedEndpoint.responseType,
-      data: singleData
-    });
-
-    res.json(singleData);
   } catch (err) {
     console.error('Error in mock API:', err);
     res.status(500).json({

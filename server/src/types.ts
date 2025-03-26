@@ -25,6 +25,7 @@ export interface IEndpoint extends Document {
   projectId: string;
   responseType: 'list' | 'single';
   parameterPath: string;
+  responseHttpStatus: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -46,5 +47,6 @@ export function isIEndpoint(obj: any): obj is IEndpoint {
     typeof obj.delay === 'number' &&
     typeof obj.projectId === 'string' &&
     (obj.responseType === 'list' || obj.responseType === 'single') &&
-    typeof obj.parameterPath === 'string';
+    typeof obj.parameterPath === 'string' &&
+    typeof obj.responseHttpStatus === 'string';
 }

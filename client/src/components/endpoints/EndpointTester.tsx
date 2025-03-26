@@ -12,12 +12,19 @@ interface EndpointTesterProps {
   projectId: string;
 }
 
+interface ResponseInfo {
+  status: number;
+  statusText: string;
+  data: any;
+  message: string | null;
+}
+
 const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoint, projectId }) => {
   const { theme } = useTheme();
   const [requestBody, setRequestBody] = useState<string>(
     JSON.stringify(endpoint.schemaDefinition, null, 2)
   );
-  const [response, setResponse] = useState<any>(null);
+  const [response, setResponse] = useState<ResponseInfo | null>(null);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
@@ -47,7 +54,7 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
         body: requestBody
       });
 
-      const response = await fetch(url, {
+      const fetchResponse = await fetch(url, {
         method: endpoint.method,
         headers: {
           'Content-Type': 'application/json',
@@ -61,21 +68,16 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
         } : {})
       });
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Server did not return JSON. Response type: ' + contentType);
-      }
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`);
-      }
-      // TODO: return pagination if there is any
-      console.log('Test response:', data);
-      setResponse(data.data || data);
-    } catch (error) {
-      console.error('Test request failed:', error);
-      setError(error instanceof Error ? error.message : 'Failed to test endpoint');
+      const data = await fetchResponse.json();
+      setResponse({
+        status: fetchResponse.status,
+        statusText: fetchResponse.statusText,
+        data,
+        message: fetchResponse.headers.get('X-Status-Message')
+      });
+    } catch (err) {
+      console.error('Test request failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to test endpoint');
     } finally {
       setLoading(false);
     }
@@ -118,17 +120,29 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
             <h3 className="text-lg font-medium text-[var(--text-primary)]">Response</h3>
             {error ? (
               <div className="text-red-600 whitespace-pre-wrap">{error}</div>
-            ) : (
-              <div className="overflow-hidden border border-[var(--border-color)] rounded-lg">
-                <CodeMirror
-                  value={JSON.stringify(response, null, 2)}
-                  height="300px"
-                  extensions={[json()]}
-                  editable={false}
-                  theme={theme === 'dark' ? 'dark' : 'light'}
-                  className="!bg-[var(--bg-secondary)]"
-                />
-              </div>
+            ) : response && (
+              <>
+                <div className={`text-sm font-mono p-2 rounded ${
+                  response.status >= 200 && response.status < 300 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                }`}>
+                  {response.status} {response.statusText}
+                  {response.message && (
+                    <div className="mt-1 text-xs opacity-80">{response.message}</div>
+                  )}
+                </div>
+                <div className="overflow-hidden border border-[var(--border-color)] rounded-lg mt-2">
+                  <CodeMirror
+                    value={JSON.stringify(response.data, null, 2)}
+                    height="300px"
+                    extensions={[json()]}
+                    editable={false}
+                    theme={theme === 'dark' ? 'dark' : 'light'}
+                    className="!bg-[var(--bg-secondary)]"
+                  />
+                </div>
+              </>
             )}
           </div>
         )}

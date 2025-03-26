@@ -54,6 +54,10 @@ const EndpointSchema = new Schema({
   parameterPath: {
     type: String,
     default: ':id'
+  },
+  responseHttpStatus: {
+    type: String,
+    default: '200'
   }
 }, {
   timestamps: true

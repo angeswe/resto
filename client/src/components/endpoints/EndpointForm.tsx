@@ -4,6 +4,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { endpointsApi } from '../../utils/api';
 import { EndpointData, Endpoint, EndpointMethod, ResponseType } from '../../types/project';
+import { METHOD_STATUS_CODES } from '../../types/http';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface EndpointFormProps {
@@ -24,6 +25,7 @@ interface FormData {
   delay: number;
   responseType: ResponseType;
   parameterPath: string;
+  responseHttpStatus: string;
 }
 
 const defaultSchema = {
@@ -44,7 +46,8 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
     apiKeys: [''],
     delay: 0,
     responseType: 'list',
-    parameterPath: ':id'
+    parameterPath: ':id',
+    responseHttpStatus: '200'
   });
   const [isValidJson, setIsValidJson] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,7 +66,8 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
         apiKeys: endpoint.apiKeys.length > 0 ? endpoint.apiKeys : [''],
         delay: endpoint.delay,
         responseType: endpoint.responseType,
-        parameterPath: endpoint.parameterPath
+        parameterPath: endpoint.parameterPath,
+        responseHttpStatus: endpoint.responseHttpStatus
       });
     }
   }, [endpoint]);
@@ -103,7 +107,6 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
         setIsSubmitting(false);
         return;
       }
-      // TODO: add http status (201, 200 etc)
       const endpointData: EndpointData = {
         path: formData.path,
         method: formData.method.toUpperCase() as EndpointMethod,
@@ -114,7 +117,8 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
         apiKeys: formData.apiKeys.filter(key => key.trim()),
         delay: formData.delay,
         responseType: formData.responseType,
-        parameterPath: formData.parameterPath
+        parameterPath: formData.parameterPath,
+        responseHttpStatus: formData.responseHttpStatus
       };
 
       console.log('Submitting endpoint:', endpointData);
@@ -221,6 +225,32 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
           </select>
         </div>
       )}
+      <div>
+        <label htmlFor="responseHttpStatus" className="block text-sm font-medium text-[var(--text-primary)]">
+          Response HTTP Status
+        </label>
+        <select
+          className="form-select"
+          value={formData.responseHttpStatus}
+          onChange={(e) => setFormData({ ...formData, responseHttpStatus: e.target.value })}
+        >
+          {Object.entries(
+            METHOD_STATUS_CODES[formData.method].reduce((acc, status) => {
+              if (!acc[status.category]) acc[status.category] = [];
+              acc[status.category].push(status);
+              return acc;
+            }, {} as Record<string, typeof METHOD_STATUS_CODES[keyof typeof METHOD_STATUS_CODES]>)
+          ).map(([category, codes]) => (
+            <optgroup key={category} label={category.replace(/([A-Z])/g, ' $1').toLowerCase()}>
+              {codes.map(status => (
+                <option key={status.code} value={status.code}>
+                  {status.code} {status.text}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </div>
 
       {formData.method === 'GET' && formData.responseType === 'single' && (
         <div>

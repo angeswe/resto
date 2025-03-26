@@ -33,6 +33,7 @@ export interface EndpointData {
   delay: number;
   responseType: ResponseType;
   parameterPath: string;
+  responseHttpStatus: string;
 }
 
 export interface Endpoint extends EndpointData {

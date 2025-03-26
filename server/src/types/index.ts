@@ -13,6 +13,14 @@ export interface IEndpoint extends Document {
   method: string;
   response: any;
   projectId: string;
+  schemaDefinition: any;
+  count: number;
+  supportPagination: boolean;
+  requireAuth: boolean;
+  apiKeys: string[];
+  delay: number;
+  responseType: 'list' | 'single';
+  parameterPath: string;
   createdAt: Date;
   updatedAt: Date;
 }
