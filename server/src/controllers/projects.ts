@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Project } from '../models/Project';
+import { Endpoint } from '../models/Endpoint';
 import ErrorResponse from '../utils/ErrorResponse';
 
 // Format project data for response
@@ -136,6 +137,10 @@ export const deleteProject = async (
       throw new ErrorResponse(`Project not found with id of ${req.params.id}`, 404);
     }
 
+    // Delete all endpoints associated with this project
+    await Endpoint.deleteMany({ projectId: project._id });
+
+    // Delete the project
     await project.deleteOne();
 
     res.status(200).json({

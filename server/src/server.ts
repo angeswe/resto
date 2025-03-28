@@ -4,8 +4,10 @@ import cors from 'cors';
 import path from 'path';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
+import swaggerUi from 'swagger-ui-express';
 
 import { config } from './config';
+import { swaggerSpec } from './config/swagger';
 import { errorHandler } from './middleware/error';
 import { projectRoutes } from './routes/projects';
 import endpointRoutes from './routes/endpoints';
@@ -43,6 +45,15 @@ class Server {
   }
 
   private setupRoutes() {
+    // Swagger documentation
+    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+    
+    // JSON endpoint for swagger spec
+    this.app.get('/swagger.json', (req: Request, res: Response) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(swaggerSpec);
+    });
+
     // Mount API routes at /api
     const apiRouter = express.Router();
     apiRouter.use('/projects', projectRoutes);

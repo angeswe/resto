@@ -11,6 +11,7 @@ export interface IProject extends Document {
   apiKeys: string[];
   createdAt: Date;
   updatedAt: Date;
+  endpoints: IEndpoint[];
 }
 
 export interface IEndpoint extends Document {
@@ -36,7 +37,7 @@ export interface RequestWithEndpoint extends Request {
 
 // Type guard for IEndpoint
 export function isIEndpoint(obj: any): obj is IEndpoint {
-  return obj && 
+  return obj &&
     typeof obj.path === 'string' &&
     typeof obj.method === 'string' &&
     obj.schemaDefinition &&

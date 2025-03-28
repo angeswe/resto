@@ -8,6 +8,10 @@ RUN npm install
 
 COPY . .
 
+# Build Tailwind CSS first
+RUN npx tailwindcss -i ./src/index.css -o ./src/styles/tailwind.css
+
+# Then build the project
 RUN npm run build
 
 FROM nginx:alpine

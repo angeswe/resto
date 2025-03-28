@@ -60,12 +60,12 @@ const ProjectList: FC = () => {
         </div>
       </div>
 
-      {error && (
+      {error ? (
         <div className="rounded-md bg-red-50 p-4 mb-6">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 !text-red-400"
+                className="h-5 w-5 text-red-400"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -78,19 +78,17 @@ const ProjectList: FC = () => {
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="!text-sm !text-red-800 font-medium">Error loading projects</h3>
-              <div className="mt-2 !text-sm !text-red-700">
+              <h3 className="text-sm text-red-800 font-medium">Error loading projects</h3>
+              <div className="mt-2 text-sm text-red-700">
                 <p>{error}</p>
               </div>
             </div>
           </div>
         </div>
-      )}
-
-      {!error && projects.length === 0 ? (
+      ) : projects.length === 0 ? (
         <div className="text-center rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 p-12">
           <svg
-            className="mx-auto h-12 w-12 !text-gray-400"
+            className="mx-auto h-12 w-12 text-gray-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -103,15 +101,15 @@ const ProjectList: FC = () => {
               d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
             />
           </svg>
-          <h3 className="mt-2 !text-sm !text-gray-900 dark:!text-gray-100 font-medium">No projects</h3>
-          <p className="mt-1 !text-sm !text-gray-500 dark:!text-gray-400">Get started by creating a new project</p>
+          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No projects</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new project.</p>
           <div className="mt-6">
             <Link
               to="/projects/new"
-              className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--accent-color)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]"
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]"
             >
               <svg 
-                className="mr-2 h-5 w-5" 
+                className="-ml-1 mr-2 h-5 w-5" 
                 xmlns="http://www.w3.org/2000/svg" 
                 viewBox="0 0 20 20" 
                 fill="currentColor"
@@ -127,12 +125,12 @@ const ProjectList: FC = () => {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {sortedProjects.map((project) => (
             <ProjectCard
               key={project.id}
               project={project}
-              onDelete={handleDeleteProject}
+              onDelete={() => handleDeleteProject(project.id)}
             />
           ))}
         </div>

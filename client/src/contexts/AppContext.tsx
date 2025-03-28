@@ -31,7 +31,8 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
       setProjects(data);
       return data;
     } catch (err: unknown) {
-      setError("Failed to load projects");
+      const errorMessage = (err as any).response?.data?.error || "An error occurred while loading projects";
+      setError(errorMessage);
       console.error("Error fetching projects:", err);
       return [];
     } finally {

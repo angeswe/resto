@@ -5,7 +5,37 @@ import mongoose, { Types } from 'mongoose';
 
 const router = express.Router();
 
-// Debug route to list all endpoints
+/**
+ * @swagger
+ * /api/debug:
+ *   get:
+ *     summary: Debug route to list all endpoints (Development only)
+ *     tags: [Debug]
+ *     responses:
+ *       200:
+ *         description: List of all endpoints
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 endpointCount:
+ *                   type: integer
+ *                   description: Total number of endpoints
+ *                 endpoints:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       path:
+ *                         type: string
+ *                       method:
+ *                         type: string
+ *                       projectId:
+ *                         type: string
+ *                       id:
+ *                         type: string
+ */
 router.get('/debug', async (req: Request, res: Response) => {
   try {
     const endpoints = await Endpoint.find().lean();
@@ -28,7 +58,94 @@ router.get('/debug', async (req: Request, res: Response) => {
   }
 });
 
-// Get all endpoints for a project
+/**
+ * @swagger
+ * /api/projects/{projectId}/endpoints:
+ *   get:
+ *     summary: Get all endpoints for a project
+ *     tags: [Endpoints]
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Project ID
+ *     responses:
+ *       200:
+ *         description: List of endpoints for the project
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Endpoint'
+ *       400:
+ *         description: Invalid project ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *   post:
+ *     summary: Create a new endpoint for a project
+ *     tags: [Endpoints]
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Project ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - path
+ *               - method
+ *               - schemaDefinition
+ *             properties:
+ *               path:
+ *                 type: string
+ *                 description: Endpoint path (e.g., /users)
+ *               method:
+ *                 type: string
+ *                 enum: [GET, POST, PUT, DELETE, PATCH]
+ *                 description: HTTP method
+ *               schemaDefinition:
+ *                 type: object
+ *                 description: Schema definition
+ *               responseType:
+ *                 type: string
+ *                 description: Response type
+ *     responses:
+ *       201:
+ *         description: Endpoint created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Endpoint'
+ *       400:
+ *         description: Invalid request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/projects/:projectId/endpoints', async (req: Request, res: Response) => {
   try {
     const projectId = req.params.projectId;
@@ -59,50 +176,6 @@ router.get('/projects/:projectId/endpoints', async (req: Request, res: Response)
   }
 });
 
-// Get a single endpoint by ID
-router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, res: Response) => {
-  try {
-    const { projectId, endpointId } = req.params;
-    
-    if (!Types.ObjectId.isValid(projectId) || !Types.ObjectId.isValid(endpointId)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid ID',
-        message: 'The provided project ID or endpoint ID is not valid'
-      });
-    }
-
-    const endpoint = await Endpoint.findOne({
-      _id: new Types.ObjectId(endpointId),
-      projectId: new Types.ObjectId(projectId)
-    }).lean();
-
-    if (!endpoint) {
-      return res.status(404).json({
-        success: false,
-        error: 'Not Found',
-        message: 'Endpoint not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: {
-        ...endpoint,
-        id: endpoint._id
-      }
-    });
-  } catch (error) {
-    console.error('Error getting endpoint:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server Error',
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
-    });
-  }
-});
-
-// Create a new endpoint
 router.post('/projects/:projectId/endpoints', async (req: Request, res: Response) => {
   try {
     const projectId = req.params.projectId;
@@ -213,7 +286,164 @@ router.post('/projects/:projectId/endpoints', async (req: Request, res: Response
   }
 });
 
-// Update an endpoint
+/**
+ * @swagger
+ * /api/projects/{projectId}/endpoints/{endpointId}:
+ *   get:
+ *     summary: Get an endpoint by ID
+ *     tags: [Endpoints]
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Project ID
+ *       - in: path
+ *         name: endpointId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Endpoint ID
+ *     responses:
+ *       200:
+ *         description: Endpoint details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Endpoint'
+ *       404:
+ *         description: Endpoint not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, res: Response) => {
+  try {
+    const { projectId, endpointId } = req.params;
+    
+    if (!Types.ObjectId.isValid(projectId) || !Types.ObjectId.isValid(endpointId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid ID',
+        message: 'The provided project ID or endpoint ID is not valid'
+      });
+    }
+
+    const endpoint = await Endpoint.findOne({
+      _id: new Types.ObjectId(endpointId),
+      projectId: new Types.ObjectId(projectId)
+    }).lean();
+
+    if (!endpoint) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Endpoint not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...endpoint,
+        id: endpoint._id
+      }
+    });
+  } catch (error) {
+    console.error('Error getting endpoint:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server Error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/endpoints/{endpointId}:
+ *   put:
+ *     summary: Update an endpoint
+ *     tags: [Endpoints]
+ *     parameters:
+ *       - in: path
+ *         name: endpointId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Endpoint ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               path:
+ *                 type: string
+ *                 description: Endpoint path
+ *               method:
+ *                 type: string
+ *                 enum: [GET, POST, PUT, DELETE, PATCH]
+ *                 description: HTTP method
+ *               schemaDefinition:
+ *                 type: object
+ *                 description: Schema definition
+ *     responses:
+ *       200:
+ *         description: Endpoint updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Endpoint'
+ *       404:
+ *         description: Endpoint not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *   delete:
+ *     summary: Delete an endpoint
+ *     tags: [Endpoints]
+ *     parameters:
+ *       - in: path
+ *         name: endpointId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Endpoint ID
+ *     responses:
+ *       200:
+ *         description: Endpoint deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *       404:
+ *         description: Endpoint not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.put('/endpoints/:endpointId', async (req: Request, res: Response) => {
   try {
     const endpointId = req.params.endpointId;
@@ -260,7 +490,6 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response) => {
   }
 });
 
-// Delete an endpoint
 router.delete('/endpoints/:endpointId', async (req: Request, res: Response) => {
   try {
     const endpointId = req.params.endpointId;

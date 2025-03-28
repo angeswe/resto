@@ -9,6 +9,179 @@ import { isValidStatusCodeForMethod, getDefaultSuccessStatusCode, METHOD_STATUS_
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /mock/{projectId}/*:
+ *   get:
+ *     summary: Mock any GET endpoint
+ *     tags: [Mock API]
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Project ID
+ *       - in: path
+ *         name: '*'
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The endpoint path to mock
+ *     responses:
+ *       200:
+ *         description: Mock response based on endpoint configuration
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               description: Dynamic response based on endpoint configuration
+ *       404:
+ *         description: Endpoint not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *   post:
+ *     summary: Mock any POST endpoint
+ *     tags: [Mock API]
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Project ID
+ *       - in: path
+ *         name: '*'
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The endpoint path to mock
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: Any JSON payload
+ *     responses:
+ *       200:
+ *         description: Mock response based on endpoint configuration
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               description: Dynamic response based on endpoint configuration
+ *       404:
+ *         description: Endpoint not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *   put:
+ *     summary: Mock any PUT endpoint
+ *     tags: [Mock API]
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Project ID
+ *       - in: path
+ *         name: '*'
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The endpoint path to mock
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: Any JSON payload
+ *     responses:
+ *       200:
+ *         description: Mock response based on endpoint configuration
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               description: Dynamic response based on endpoint configuration
+ *       404:
+ *         description: Endpoint not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *   delete:
+ *     summary: Mock any DELETE endpoint
+ *     tags: [Mock API]
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Project ID
+ *       - in: path
+ *         name: '*'
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The endpoint path to mock
+ *     responses:
+ *       200:
+ *         description: Mock response based on endpoint configuration
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               description: Dynamic response based on endpoint configuration
+ *       404:
+ *         description: Endpoint not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *   patch:
+ *     summary: Mock any PATCH endpoint
+ *     tags: [Mock API]
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Project ID
+ *       - in: path
+ *         name: '*'
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The endpoint path to mock
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: Any JSON payload
+ *     responses:
+ *       200:
+ *         description: Mock response based on endpoint configuration
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               description: Dynamic response based on endpoint configuration
+ *       404:
+ *         description: Endpoint not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+
 // Match URL path with endpoint path pattern
 function matchPathPattern(urlPath: string, endpointPath: string): { matches: boolean; params: Record<string, string> } {
   // Sanitize inputs

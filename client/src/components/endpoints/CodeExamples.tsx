@@ -17,11 +17,10 @@ interface CodeExamplesProps {
 const CodeExamples: React.FC<CodeExamplesProps> = ({ endpoint, projectId }) => {
   const { theme } = useTheme();
   const baseUrl = `http://localhost:3000/mock/${projectId}${endpoint.path}`;
-  
+
   const examples = {
-    curl: `curl ${baseUrl}${endpoint.requireAuth ? ' \\\n  -H "X-API-Key: YOUR_API_KEY"' : ''}${
-      endpoint.supportPagination ? ' \\\n  -G \\\n  -d "page=1" \\\n  -d "limit=10"' : ''
-    }`,
+    curl: `curl ${baseUrl}${endpoint.requireAuth ? ' \\\n  -H "X-API-Key: YOUR_API_KEY"' : ''}${endpoint.supportPagination ? ' \\\n  -G \\\n  -d "page=1" \\\n  -d "limit=10"' : ''
+      }`,
     fetch: `fetch("${baseUrl}"${endpoint.supportPagination ? '?page=1&limit=10' : ''}", {
   method: "${endpoint.method}",${endpoint.requireAuth ? `
   headers: {
@@ -33,18 +32,12 @@ const CodeExamples: React.FC<CodeExamplesProps> = ({ endpoint, projectId }) => {
   .catch(error => console.error('Error:', error));`,
     axios: `import axios from 'axios';
 
-axios.${endpoint.method.toLowerCase()}("${baseUrl}"${endpoint.supportPagination ? ', {\n  params: { page: 1, limit: 10 }' : ''}${
-      endpoint.requireAuth ? `${endpoint.supportPagination ? ',' : ', {\n'}  headers: {
+axios.${endpoint.method.toLowerCase()}("${baseUrl}"${endpoint.supportPagination ? ', {\n  params: { page: 1, limit: 10 }' : ''}${endpoint.requireAuth ? `${endpoint.supportPagination ? ',' : ', {\n'}  headers: {
     "X-API-Key": "YOUR_API_KEY"
   }` : ''
-}${endpoint.supportPagination || endpoint.requireAuth ? '\n}' : ''})
+      }${endpoint.supportPagination || endpoint.requireAuth ? '\n}' : ''})
   .then(response => console.log(response.data))
   .catch(error => console.error('Error:', error));`,
-  };
-
-  const responseSchema = {
-    success: true,
-    data: endpoint.schemaDefinition
   };
 
   return (
