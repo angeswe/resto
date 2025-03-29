@@ -1,9 +1,9 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 import { Project, ProjectData, Endpoint, EndpointData } from "../types/project";
+import { API_URLS } from '../config/api';
 
-// TODO: remove hardcoded API URL
 const api: AxiosInstance = axios.create({
-  baseURL: "http://localhost:3000/api",
+  baseURL: API_URLS.api,
   headers: {
     "Content-Type": "application/json",
   },

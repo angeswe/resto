@@ -7,6 +7,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { ArrowLeftIcon } from '@heroicons/react/24/solid';
 import { ClipboardIcon } from '@heroicons/react/24/outline';
 import { METHOD_STATUS_CODES } from '../../types/http';
+import { API_URLS } from '../../config/api';
 
 interface Endpoint {
   path: string;
@@ -31,7 +32,8 @@ const EndpointDocs: React.FC = () => {
   useEffect(() => {
     const fetchEndpoint = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/api/projects/${projectId}/endpoints/${endpointId}`);
+        if (!projectId || !endpointId) return;
+        const response = await fetch(API_URLS.getEndpoint(projectId, endpointId));
         if (!response.ok) {
           throw new Error('Failed to fetch endpoint');
         }
@@ -118,7 +120,7 @@ const EndpointDocs: React.FC = () => {
       }
     : generateExampleValue(endpoint.schemaDefinition);
 
-  const fullPath = endpoint ? `http://localhost:3000/mock/${endpoint.projectId}${endpoint.path}` : '';
+  const fullPath = endpoint ? API_URLS.getMockUrl(endpoint.projectId, endpoint.path) : '';
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(fullPath).then(() => {

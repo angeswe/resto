@@ -37,6 +37,7 @@ const ProjectSettings: React.FC = () => {
     requireAuth: false,
     apiKeys: ['']
   });
+  const [originalData, setOriginalData] = useState<FormData | null>(null);
   const [showEndpointModal, setShowEndpointModal] = useState(false);
   const [isValidJson, setIsValidJson] = useState(true);
   const { theme } = useTheme();
@@ -76,6 +77,7 @@ const ProjectSettings: React.FC = () => {
 
         console.log('Setting form data:', formattedData);
         setFormData(formattedData);
+        setOriginalData(formattedData);
       } catch (error) {
         console.error('Error fetching project:', error);
         toast.error('Failed to load project');
@@ -135,6 +137,19 @@ const ProjectSettings: React.FC = () => {
       ...prev,
       apiKeys: prev.apiKeys.filter((_, i) => i !== index)
     }));
+  };
+
+  const hasUnsavedChanges = () => {
+    if (!originalData) return false;
+    
+    return (
+      originalData.name !== formData.name ||
+      originalData.description !== formData.description ||
+      originalData.defaultSchema !== formData.defaultSchema ||
+      originalData.defaultCount !== formData.defaultCount ||
+      originalData.requireAuth !== formData.requireAuth ||
+      JSON.stringify(originalData.apiKeys) !== JSON.stringify(formData.apiKeys)
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -384,7 +399,12 @@ const ProjectSettings: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--accent-color)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]"
+                  disabled={!hasUnsavedChanges() || !isValidJson}
+                  className={`inline-flex items-center px-4 py-2 rounded-lg text-white font-medium text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)] ${
+                    hasUnsavedChanges() && isValidJson
+                      ? 'bg-[var(--accent-color)] hover:bg-[var(--accent-hover)]'
+                      : 'bg-[var(--accent-color)] opacity-50 cursor-not-allowed'
+                  } transition-colors duration-200`}
                 >
                   <svg
                     className="mr-2 h-5 w-5"

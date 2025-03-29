@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { FaSun, FaMoon, FaGithub, FaBook, FaCode } from 'react-icons/fa';
+import { API_URLS } from '../config/api';
 
 const Navbar: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -23,7 +24,7 @@ const Navbar: React.FC = () => {
               <span>Docs</span>
             </Link>
             <a
-              href="http://localhost:3000/api-docs"
+              href={API_URLS.docs}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-200"

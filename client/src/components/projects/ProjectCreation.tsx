@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { API_URLS } from '../../config/api';
 
 interface ProjectFormData {
   name: string;
@@ -25,7 +26,7 @@ const ProjectCreation: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:3000/api/projects', {
+      const response = await fetch(API_URLS.projects, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

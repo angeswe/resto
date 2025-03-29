@@ -2,6 +2,7 @@ import React from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { useTheme } from '../../contexts/ThemeContext';
+import { API_URLS } from '../../config/api';
 
 interface CodeExamplesProps {
   endpoint: {
@@ -16,7 +17,7 @@ interface CodeExamplesProps {
 
 const CodeExamples: React.FC<CodeExamplesProps> = ({ endpoint, projectId }) => {
   const { theme } = useTheme();
-  const baseUrl = `http://localhost:3000/mock/${projectId}${endpoint.path}`;
+  const baseUrl = API_URLS.getMockUrl(projectId, endpoint.path);
 
   const examples = {
     curl: `curl ${baseUrl}${endpoint.requireAuth ? ' \\\n  -H "X-API-Key: YOUR_API_KEY"' : ''}${endpoint.supportPagination ? ' \\\n  -G \\\n  -d "page=1" \\\n  -d "limit=10"' : ''

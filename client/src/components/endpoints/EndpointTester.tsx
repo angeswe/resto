@@ -4,6 +4,7 @@ import Modal from '../common/Modal';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { useTheme } from '../../contexts/ThemeContext';
+import { API_URLS } from '../../config/api';
 
 interface EndpointTesterProps {
   isOpen: boolean;
@@ -35,7 +36,7 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
       setLoading(true);
 
       // Use the same backend URL as the rest of the application
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const baseUrl = API_URLS.base;
       let url = `${baseUrl}/mock/${projectId}${endpoint.path}`;
 
       // Only append parameter path for single-item endpoints
