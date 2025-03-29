@@ -92,7 +92,9 @@ resto/
 - `NODE_ENV` - Environment (production/development)
 
 ### Client
-- `VITE_API_URL` - Backend API URL (development only)
+- `VITE_API_URL` - Backend API URL (default: http://localhost:3000)
+  - Development: Set in `.env` file
+  - Docker: Set in `docker-compose.yml`
 
 ### Docker
 - `MONGO_PASSWORD` - MongoDB root password
@@ -113,6 +115,14 @@ resto/
    - Authentication requirements
    - Example requests and responses
    - Code examples in various programming languages
+
+### User Interface
+
+The application features a modern, responsive UI built with:
+- HeroUI React components for consistent design
+- Heroicons for scalable icons
+- Dark/Light theme support with automatic system preference detection
+- Responsive layouts for all screen sizes
 
 ## Contributing
 
