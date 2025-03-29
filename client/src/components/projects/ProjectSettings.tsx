@@ -3,6 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
+import {
+  Card,
+  CardBody,
+  Input,
+  Textarea,
+  Button,
+  Switch,
+  Divider
+} from '@heroui/react';
+import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 import EndpointList from '../endpoints/EndpointList';
 import EndpointForm from '../endpoints/EndpointForm';
 import { projectsApi } from '../../utils/api';
@@ -141,7 +151,7 @@ const ProjectSettings: React.FC = () => {
 
   const hasUnsavedChanges = () => {
     if (!originalData) return false;
-    
+
     return (
       originalData.name !== formData.name ||
       originalData.description !== formData.description ||
@@ -200,235 +210,143 @@ const ProjectSettings: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="space-y-8 divide-y divide-[var(--border-color)]">
-        <div className="space-y-6 sm:space-y-5">
-          <div>
-            <h3 className="text-lg leading-6 font-medium text-[var(--text-primary)]">Project Settings</h3>
-            <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-              Configure your project settings and manage API keys
-            </p>
-          </div>
+      <div className="mb-8">
+        <h3 className="text-lg font-medium text-[var(--text-primary)]">Project Settings</h3>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">
+          Configure your project settings and manage API keys
+        </p>
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start">
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-[var(--text-primary)] sm:mt-px sm:pt-2"
-              >
-                Project Name
-              </label>
-              <div className="mt-1 sm:mt-0 sm:col-span-2">
-                <input
+      <div className="space-y-8">
+        <Card>
+          <CardBody>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 gap-6">
+                <Input
                   type="text"
                   name="name"
-                  id="name"
-                  defaultValue={formData.name}
+                  label="Project Name"
+                  value={formData.name}
                   onChange={handleChange}
-                  className="max-w-lg block w-full shadow-sm focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)] sm:max-w-xs sm:text-sm border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)] rounded-md"
+                  isRequired
                 />
-              </div>
-            </div>
 
-            <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start">
-              <label
-                htmlFor="description"
-                className="block text-sm font-medium text-[var(--text-primary)] sm:mt-px sm:pt-2"
-              >
-                Description
-              </label>
-              <div className="mt-1 sm:mt-0 sm:col-span-2">
-                <textarea
-                  id="description"
+                <Textarea
                   name="description"
-                  rows={3}
-                  defaultValue={formData.description}
+                  label="Description"
+                  value={formData.description}
                   onChange={handleChange}
-                  className="max-w-lg shadow-sm block w-full focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)] sm:text-sm border border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)] rounded-md"
+                  placeholder="Describe your project..."
                 />
-              </div>
-            </div>
 
-            <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start">
-              <label
-                htmlFor="defaultSchema"
-                className="block text-sm font-medium text-[var(--text-primary)] sm:mt-px sm:pt-2"
-              >
-                Default Schema
-              </label>
-              <div className="mt-1 sm:mt-0 sm:col-span-2">
-                <CodeMirror
-                  value={formData.defaultSchema}
-                  height="200px"
-                  extensions={[json()]}
-                  onChange={handleJsonChange}
-                  className={`border rounded-md ${!isValidJson ? 'border-[var(--error-border)]' : 'border-[var(--input-border)]'}`}
-                  theme={theme}
-                />
-                {!isValidJson && (
-                  <p className="mt-2 text-sm text-[var(--error-text)]">Invalid JSON format</p>
-                )}
-              </div>
-            </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Default Schema
+                  </label>
+                  <CodeMirror
+                    value={formData.defaultSchema}
+                    height="200px"
+                    extensions={[json()]}
+                    onChange={handleJsonChange}
+                    className={`border rounded-md ${!isValidJson ? 'border-[var(--error-border)]' : 'border-[var(--input-border)]'}`}
+                    theme={theme}
+                  />
+                  {!isValidJson && (
+                    <p className="mt-2 text-sm text-[var(--error-text)]">Invalid JSON format</p>
+                  )}
+                </div>
 
-            <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start">
-              <label
-                htmlFor="defaultCount"
-                className="block text-sm font-medium text-[var(--text-primary)] sm:mt-px sm:pt-2"
-              >
-                Default Count
-              </label>
-              <div className="mt-1 sm:mt-0 sm:col-span-2">
-                <input
+                <Input
                   type="number"
                   name="defaultCount"
-                  id="defaultCount"
-                  defaultValue={formData.defaultCount}
+                  label="Default Count"
+                  value={formData.defaultCount.toString()}
                   onChange={handleChange}
-                  min="1"
-                  max="100"
-                  className="max-w-lg block w-full shadow-sm focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)] sm:max-w-xs sm:text-sm border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)] rounded-md"
+                  min={1}
+                  max={100}
                 />
-              </div>
-            </div>
 
-            <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start">
-              <label
-                htmlFor="requireAuth"
-                className="block text-sm font-medium text-[var(--text-primary)] sm:mt-px sm:pt-2"
-              >
-                Authentication
-              </label>
-              <div className="mt-1 sm:mt-0 sm:col-span-2">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-medium">Authentication</h4>
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      Enable authentication for this project's endpoints
+                    </p>
+                  </div>
+                  <Switch
                     name="requireAuth"
-                    id="requireAuth"
-                    defaultChecked={formData.requireAuth}
+                    checked={formData.requireAuth}
                     onChange={handleCheckboxChange}
-                    className="h-4 w-4 text-[var(--accent-color)] focus:ring-[var(--accent-color)] border-[var(--input-border)] rounded"
                   />
-                  <label htmlFor="requireAuth" className="ml-2 block text-sm text-[var(--text-primary)]">
-                    Require API Key Authentication
-                  </label>
                 </div>
-              </div>
-            </div>
-            {/* TODO: all endpoints should be protected by API key authentication if this is enabled */}
-            {formData.requireAuth && (
-              <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start">
-                <label
-                  htmlFor="apiKeys"
-                  className="block text-sm font-medium text-[var(--text-primary)] sm:mt-px sm:pt-2"
-                >
-                  API Keys
-                </label>
-                <div className="mt-1 sm:mt-0 sm:col-span-2 space-y-2">
-                  {formData.apiKeys.map((key, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <input
-                        type="text"
-                        defaultValue={key}
-                        onChange={(e) => handleApiKeyChange(index, e.target.value)}
-                        className="max-w-lg block w-full shadow-sm focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)] sm:text-sm border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)] rounded-md"
-                        placeholder="Enter API key"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeApiKey(index)}
-                        className="inline-flex items-center p-2 rounded-lg text-[var(--error-text)] hover:text-white hover:bg-[var(--error-bg)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--error-border)]"
-                      >
-                        <svg
-                          className="h-5 w-5"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={addApiKey}
-                    className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--accent-color)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)]"
-                  >
-                    <svg
-                      className="mr-2 h-5 w-5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Add API Key
-                  </button>
-                </div>
-              </div>
-            )}
 
-            <div className="pt-5">
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--error-bg)] text-white font-medium text-sm hover:bg-[var(--error-bg-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--error-border)]"
-                >
-                  <svg
-                    className="mr-2 h-5 w-5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Delete Project
-                </button>
-                <button
-                  type="submit"
-                  disabled={!hasUnsavedChanges() || !isValidJson}
-                  className={`inline-flex items-center px-4 py-2 rounded-lg text-white font-medium text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)] ${
-                    hasUnsavedChanges() && isValidJson
-                      ? 'bg-[var(--accent-color)] hover:bg-[var(--accent-hover)]'
-                      : 'bg-[var(--accent-color)] opacity-50 cursor-not-allowed'
-                  } transition-colors duration-200`}
-                >
-                  <svg
-                    className="mr-2 h-5 w-5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Save Changes
-                </button>
+                <Divider />
+
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-medium">API Keys</h4>
+                    <Button
+                      size="sm"
+                      variant="light"
+                      onClick={addApiKey}
+                    >
+                      Add Key
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {formData.apiKeys.map((key, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          type="text"
+                          value={key}
+                          onChange={(e) => handleApiKeyChange(index, e.target.value)}
+                          placeholder="Enter API key"
+                          className="flex-1"
+                        />
+                        <Button
+                          isIconOnly
+                          color="danger"
+                          variant="light"
+                          onClick={() => removeApiKey(index)}
+                          disabled={formData.apiKeys.length === 1}
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          </form>
-        </div>
+
+              <div className="flex justify-between items-center pt-6">
+                <Button
+                  color="danger"
+                  variant="light"
+                  onClick={handleDelete}
+                  startContent={<TrashIcon className="h-5 w-5" />}
+                >
+                  Delete Project
+                </Button>
+                <div className="flex gap-3">
+                  <Button
+                    type="submit"
+                    color="primary"
+                    isDisabled={!isValidJson || !hasUnsavedChanges()}
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
 
         {id && (
-          <div className="pt-8">
-            <EndpointList projectId={id} />
-          </div>
+          <Card>
+            <CardBody>
+              <EndpointList projectId={id} />
+            </CardBody>
+          </Card>
         )}
 
         {showEndpointModal && id && (

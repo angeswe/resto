@@ -1,5 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { 
+  CalendarIcon, 
+  KeyIcon, 
+  TrashIcon,
+  DocumentIcon
+} from '@heroicons/react/24/outline';
+import { Card, CardHeader, CardBody, Button, Badge } from '@heroui/react';
 
 interface Project {
   id: string;
@@ -19,8 +26,6 @@ interface ProjectCardProps {
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
-  console.log('Project data:', project); // Debug log
-
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     if (window.confirm('Are you sure you want to delete this project?')) {
@@ -29,21 +34,20 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
   };
 
   const formatDate = (dateString: string) => {
-    console.log('Formatting date:', dateString); // Debug log
     if (!dateString) return 'Unknown date';
-    
+
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return 'Invalid date';
-      
+
       const now = new Date();
       const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-      
+
       if (diffInSeconds < 60) return 'just now';
       if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
       if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
       if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-      
+
       return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -56,50 +60,49 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
   };
 
   return (
-    <div className="p-6 hover:shadow-lg transition-shadow duration-200 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg">
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <h3 className="text-lg font-medium text-[var(--text-primary)]">
+    <Card 
+      className="hover:shadow-lg transition-shadow duration-200 border border-[var(--card-border)]"
+    >
+      <CardHeader className="flex justify-between items-start p-4">
+        <div className="flex items-center gap-2">
+          <DocumentIcon className="h-5 w-5 text-[var(--text-secondary)]" />
+          <h3 className="text-lg font-medium">
             <Link to={`/projects/${project.id}/settings`} className="hover:text-[var(--accent-color)]">
               {project.name}
             </Link>
           </h3>
-          <div className="mt-1 flex items-center space-x-2">
-            <span className="text-sm text-[var(--text-secondary)]">
+        </div>
+        <Button
+          isIconOnly
+          variant="light"
+          color="danger"
+          onClick={handleDelete}
+          startContent={<TrashIcon className="h-5 w-5" />}
+          aria-label="Delete project"
+        />
+      </CardHeader>
+      <CardBody className="pt-0 px-4 pb-4">
+        <div className="flex items-center space-x-2 mb-2">
+          <div className="flex items-center text-[var(--text-secondary)]">
+            <CalendarIcon className="h-4 w-4 mr-1" />
+            <span className="text-sm">
               Created {formatDate(project.createdAt)}
             </span>
-            {project.requireAuth && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--auth-bg)] text-[var(--auth-text)]">
-                Auth Required
-              </span>
-            )}
           </div>
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            {project.description || 'No description provided'}
-          </p>
+          {project.requireAuth && (
+            <div className="flex items-center">
+              <Badge variant="flat" color="warning">
+                <KeyIcon className="h-3 w-3 mr-1" />
+                Auth Required
+              </Badge>
+            </div>
+          )}
         </div>
-        <div className="ml-4">
-          <button
-            onClick={handleDelete}
-            className="p-2 rounded-lg transition-colors duration-200 hover:bg-[var(--bg-secondary)] group"
-            title="Delete project"
-          >
-            <svg
-              className="h-5 w-5 text-[var(--text-secondary)] group-hover:text-[var(--delete-hover)]"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
+        <p className="text-sm text-[var(--text-secondary)]">
+          {project.description || 'No description provided'}
+        </p>
+      </CardBody>
+    </Card>
   );
 };
 
