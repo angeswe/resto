@@ -42,6 +42,7 @@ const ProjectList: FC = () => {
             as={Link}
             to="/projects/new"
             color="primary"
+            variant="solid"
             startContent={<PlusIcon className="h-5 w-5" />}
           >
             Create Project
@@ -87,6 +88,8 @@ const ProjectList: FC = () => {
                 as={Link}
                 to="/projects/new"
                 color="primary"
+                variant="solid"
+                className="bg-primary-600 text-white hover:bg-primary-700"
                 startContent={<PlusIcon className="h-5 w-5" />}
               >
                 Create Project

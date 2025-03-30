@@ -26,7 +26,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="flex items-center">
                 <Link
                   to="/"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="btn btn-primary"
                 >
                   All Projects
                 </Link>

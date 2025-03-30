@@ -3,30 +3,17 @@ import { useParams, Link } from 'react-router-dom';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import CodeExamples from './CodeExamples';
-import { useTheme } from '../../contexts/ThemeContext';
 import { ArrowLeftIcon } from '@heroicons/react/24/solid';
 import { ClipboardIcon } from '@heroicons/react/24/outline';
 import { METHOD_STATUS_CODES } from '../../types/http';
 import { API_URLS } from '../../config/api';
-
-interface Endpoint {
-  path: string;
-  method: string;
-  schemaDefinition: object;
-  count: number;
-  supportPagination: boolean;
-  requireAuth: boolean;
-  delay: number;
-  responseHttpStatus: string;
-  projectId: string;
-}
+import { Endpoint } from '../../types/project';
 
 const EndpointDocs: React.FC = () => {
   const { projectId, endpointId } = useParams<{ projectId: string; endpointId: string }>();
   const [endpoint, setEndpoint] = useState<Endpoint | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { theme } = useTheme();
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -278,8 +265,7 @@ const EndpointDocs: React.FC = () => {
                     height="200px"
                     extensions={[json()]}
                     editable={false}
-                    theme={theme === 'dark' ? 'dark' : 'light'}
-                    className="!bg-[var(--bg-secondary)]"
+                    className="border rounded-md border-divider"
                   />
                 </div>
               </div>
@@ -297,17 +283,19 @@ const EndpointDocs: React.FC = () => {
                     height="200px"
                     extensions={[json()]}
                     editable={false}
-                    theme={theme === 'dark' ? 'dark' : 'light'}
-                    className="!bg-[var(--bg-secondary)]"
+                    className="border rounded-md border-divider"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          <CodeExamples
-            endpoint={endpoint}
-            projectId={projectId || ''}
+          <CodeExamples 
+            endpointId={endpoint.id} 
+            projectId={projectId || ''} 
+            method={endpoint.method}
+            path={endpoint.path}
+            schemaDefinition={endpoint.schemaDefinition}
           />
         </div>
       </div>

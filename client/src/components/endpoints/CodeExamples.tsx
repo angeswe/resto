@@ -1,93 +1,86 @@
 import React from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
-import { useTheme } from '../../contexts/ThemeContext';
+import { Button } from '@heroui/react';
 import { API_URLS } from '../../config/api';
 
 interface CodeExamplesProps {
-  endpoint: {
-    path: string;
-    method: string;
-    requireAuth: boolean;
-    supportPagination: boolean;
-    schemaDefinition: object;
-  };
   projectId: string;
+  endpointId: string;
+  method: string;
+  path: string;
+  schemaDefinition: Record<string, any>;
 }
 
-const CodeExamples: React.FC<CodeExamplesProps> = ({ endpoint, projectId }) => {
-  const { theme } = useTheme();
-  const baseUrl = API_URLS.getMockUrl(projectId, endpoint.path);
+const CodeExamples: React.FC<CodeExamplesProps> = ({
+  projectId,
+  endpointId,
+  method,
+  path,
+  schemaDefinition,
+}) => {
+  const baseUrl = `${API_URLS.base}/projects/${projectId}/endpoints/${endpointId}`;
+  const curlExample = `curl -X ${method} ${baseUrl}${path} \\
+  -H "Content-Type: application/json" \\
+  -d '${JSON.stringify(schemaDefinition, null, 2)}'`;
 
-  const examples = {
-    curl: `curl ${baseUrl}${endpoint.requireAuth ? ' \\\n  -H "X-API-Key: YOUR_API_KEY"' : ''}${endpoint.supportPagination ? ' \\\n  -G \\\n  -d "page=1" \\\n  -d "limit=10"' : ''
-      }`,
-    fetch: `fetch("${baseUrl}"${endpoint.supportPagination ? '?page=1&limit=10' : ''}", {
-  method: "${endpoint.method}",${endpoint.requireAuth ? `
+  const fetchExample = `fetch("${baseUrl}${path}", {
+  method: "${method}",
   headers: {
-    "X-API-Key": "YOUR_API_KEY"
-  },` : ''}
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify(${JSON.stringify(schemaDefinition, null, 2)})
 })
   .then(response => response.json())
   .then(data => console.log(data))
-  .catch(error => console.error('Error:', error));`,
-    axios: `import axios from 'axios';
+  .catch(error => console.error('Error:', error));`;
 
-axios.${endpoint.method.toLowerCase()}("${baseUrl}"${endpoint.supportPagination ? ', {\n  params: { page: 1, limit: 10 }' : ''}${endpoint.requireAuth ? `${endpoint.supportPagination ? ',' : ', {\n'}  headers: {
-    "X-API-Key": "YOUR_API_KEY"
-  }` : ''
-      }${endpoint.supportPagination || endpoint.requireAuth ? '\n}' : ''})
+  const axiosExample = `axios.${method.toLowerCase()}("${baseUrl}${path}", ${JSON.stringify(
+    schemaDefinition,
+    null,
+    2
+  )})
   .then(response => console.log(response.data))
-  .catch(error => console.error('Error:', error));`,
+  .catch(error => console.error('Error:', error));`;
+
+  const [activeTab, setActiveTab] = React.useState<'curl' | 'fetch' | 'axios'>('curl');
+
+  const codeExamples = {
+    curl: curlExample,
+    fetch: fetchExample,
+    axios: axiosExample,
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold mb-4 text-[var(--text-primary)]">Code Examples</h3>
-        <div className="space-y-4">
-          <div>
-            <h4 className="text-sm font-medium mb-2 text-[var(--text-primary)]">cURL</h4>
-            <div className="rounded-md overflow-hidden border border-[var(--border-color)]">
-              <CodeMirror
-                value={examples.curl}
-                height="100px"
-                extensions={[json()]}
-                editable={false}
-                theme={theme === 'dark' ? 'dark' : 'light'}
-                className="!bg-[var(--bg-secondary)]"
-              />
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-medium mb-2 text-[var(--text-primary)]">Fetch</h4>
-            <div className="rounded-md overflow-hidden border border-[var(--border-color)]">
-              <CodeMirror
-                value={examples.fetch}
-                height="150px"
-                extensions={[json()]}
-                editable={false}
-                theme={theme === 'dark' ? 'dark' : 'light'}
-                className="!bg-[var(--bg-secondary)]"
-              />
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-medium mb-2 text-[var(--text-primary)]">Axios</h4>
-            <div className="rounded-md overflow-hidden border border-[var(--border-color)]">
-              <CodeMirror
-                value={examples.axios}
-                height="150px"
-                extensions={[json()]}
-                editable={false}
-                theme={theme === 'dark' ? 'dark' : 'light'}
-                className="!bg-[var(--bg-secondary)]"
-              />
-            </div>
-          </div>
-        </div>
+    <div className="mt-6">
+      <div className="flex space-x-2 mb-4">
+        <Button
+          variant={activeTab === 'curl' ? 'solid' : 'light'}
+          onClick={() => setActiveTab('curl')}
+        >
+          cURL
+        </Button>
+        <Button
+          variant={activeTab === 'fetch' ? 'solid' : 'light'}
+          onClick={() => setActiveTab('fetch')}
+        >
+          Fetch
+        </Button>
+        <Button
+          variant={activeTab === 'axios' ? 'solid' : 'light'}
+          onClick={() => setActiveTab('axios')}
+        >
+          Axios
+        </Button>
+      </div>
+      <div className="bg-card rounded-lg p-4">
+        <CodeMirror
+          value={codeExamples[activeTab]}
+          height="200px"
+          extensions={[json()]}
+          editable={false}
+          className="border rounded-md border-divider"
+        />
       </div>
     </div>
   );

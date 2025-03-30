@@ -1,8 +1,12 @@
 /** @type {import('tailwindcss').Config} */
+const { heroui } = require("@heroui/theme");
+
 module.exports = {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
+    "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
@@ -18,12 +22,10 @@ module.exports = {
           700: '#0369a1',
           800: '#075985',
           900: '#0c4a6e',
+          950: '#082f49',
         },
       },
     },
   },
-  plugins: [],
-  exclude: [
-    '**/node_modules/**',
-  ],
+  plugins: [heroui()],
 }

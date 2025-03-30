@@ -5,7 +5,6 @@ import { json } from '@codemirror/lang-json';
 import { endpointsApi } from '../../utils/api';
 import { EndpointData, Endpoint, EndpointMethod, ResponseType } from '../../types/project';
 import { METHOD_STATUS_CODES } from '../../types/http';
-import { useTheme } from '../../contexts/ThemeContext';
 
 interface EndpointFormProps {
   projectId: string;
@@ -51,7 +50,6 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
   });
   const [isValidJson, setIsValidJson] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { theme } = useTheme();
   const isEditing = !!endpoint;
 
   useEffect(() => {
@@ -142,7 +140,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
     }
   };
 
-  const handleSchemaChange = (value: string) => {
+  const handleJsonChange = (value: string) => {
     setFormData(prev => ({ ...prev, schemaDefinition: value }));
     try {
       JSON.parse(value);
@@ -176,7 +174,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label htmlFor="path" className="block text-sm font-medium text-[var(--text-primary)]">
+        <label htmlFor="path" className="block text-sm font-medium text-gray-700">
           Path
         </label>
         <div className="mt-1">
@@ -186,7 +184,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
             id="path"
             value={formData.path}
             onChange={handleChange}
-            className="block w-full shadow-sm focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)] sm:text-sm border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)] rounded-md"
+            className="block w-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 rounded-md"
             placeholder="/api/users"
             required
           />
@@ -194,12 +192,12 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[var(--text-primary)]">Method</label>
+        <label className="block text-sm font-medium text-gray-700">Method</label>
         <select
           name="method"
           value={formData.method}
           onChange={handleChange}
-          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)] focus:outline-none focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)] sm:text-sm rounded-md"
+          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
         >
           <option value="GET">GET</option>
           <option value="POST">POST</option>
@@ -210,7 +208,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
 
       {formData.method === 'GET' && (
         <div>
-          <label htmlFor="responseType" className="block text-sm font-medium text-[var(--text-primary)]">
+          <label htmlFor="responseType" className="block text-sm font-medium text-gray-700">
             Response Type
           </label>
           <select
@@ -218,7 +216,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
             name="responseType"
             value={formData.responseType}
             onChange={handleChange}
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)] focus:outline-none focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)] sm:text-sm rounded-md"
+            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
           >
             <option value="list">List (Index)</option>
             <option value="single">Single Item</option>
@@ -226,7 +224,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
         </div>
       )}
       <div>
-        <label htmlFor="responseHttpStatus" className="block text-sm font-medium text-[var(--text-primary)]">
+        <label htmlFor="responseHttpStatus" className="block text-sm font-medium text-gray-700">
           Response HTTP Status
         </label>
         <select
@@ -254,7 +252,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
 
       {formData.method === 'GET' && formData.responseType === 'single' && (
         <div>
-          <label htmlFor="parameterPath" className="block text-sm font-medium text-[var(--text-primary)]">
+          <label htmlFor="parameterPath" className="block text-sm font-medium text-gray-700">
             Parameter Path
           </label>
           <div className="mt-1">
@@ -264,10 +262,10 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
               id="parameterPath"
               value={formData.parameterPath}
               onChange={handleChange}
-              className="block w-full shadow-sm focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)] sm:text-sm border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)] rounded-md"
+              className="block w-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 rounded-md"
               placeholder=":id"
             />
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            <p className="mt-1 text-sm text-gray-500">
               This will be used to identify the item in the URL (e.g., /api/users/:id)
             </p>
           </div>
@@ -277,7 +275,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
       {formData.method === 'GET' && formData.responseType === 'list' && (
         <>
           <div>
-            <label htmlFor="count" className="block text-sm font-medium text-[var(--text-primary)]">
+            <label htmlFor="count" className="block text-sm font-medium text-gray-700">
               Default Count
             </label>
             <div className="mt-1">
@@ -288,7 +286,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
                 value={formData.count}
                 onChange={handleChange}
                 min="1"
-                className="block w-full shadow-sm focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)] sm:text-sm border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)] rounded-md"
+                className="block w-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 rounded-md"
               />
             </div>
           </div>
@@ -301,15 +299,15 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
               onChange={handleChange}
               disabled={true}
               title="Pagination is a feature for the future"
-              className="h-4 w-4 text-[var(--accent-color)] focus:ring-[var(--accent-color)] border-[var(--input-border)] rounded"
+              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
             />
-            <label className="ml-2 block text-sm text-[var(--text-primary)]">Support Pagination</label>
+            <label className="ml-2 block text-sm text-gray-700">Support Pagination</label>
           </div>
         </>
       )}
 
       <div>
-        <label htmlFor="delay" className="block text-sm font-medium text-[var(--text-primary)]">
+        <label htmlFor="delay" className="block text-sm font-medium text-gray-700">
           Response Delay (ms)
         </label>
         <div className="mt-1">
@@ -320,13 +318,13 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
             value={formData.delay}
             onChange={handleChange}
             min="0"
-            className="block w-full shadow-sm focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)] sm:text-sm border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)] rounded-md"
+            className="block w-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 rounded-md"
           />
         </div>
       </div>
 
       <div>
-        <label htmlFor="schema" className="block text-sm font-medium text-[var(--text-primary)]">
+        <label htmlFor="schema" className="block text-sm font-medium text-gray-700">
           Schema Definition
         </label>
         <div className="mt-1">
@@ -334,12 +332,11 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
             value={formData.schemaDefinition}
             height="200px"
             extensions={[json()]}
-            onChange={handleSchemaChange}
-            className={`border rounded-md ${!isValidJson ? 'border-[var(--error-border)]' : 'border-[var(--input-border)]'}`}
-            theme={theme}
+            onChange={handleJsonChange}
+            className={`border rounded-md ${!isValidJson ? 'border-red-500' : 'border-gray-300'}`}
           />
           {!isValidJson && (
-            <p className="mt-2 text-sm text-[var(--error-text)]">Invalid JSON format</p>
+            <p className="mt-2 text-sm text-red-500">Invalid JSON format</p>
           )}
         </div>
       </div>
@@ -351,9 +348,9 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
             name="requireAuth"
             checked={formData.requireAuth}
             onChange={handleChange}
-            className="h-4 w-4 text-[var(--accent-color)] focus:ring-[var(--accent-color)] border-[var(--input-border)] rounded"
+            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
           />
-          <label className="ml-2 block text-sm text-[var(--text-primary)]">Require Authentication</label>
+          <label className="ml-2 block text-sm text-gray-700">Require Authentication</label>
         </div>
 
         {formData.requireAuth && (
@@ -365,12 +362,12 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
                   value={key}
                   onChange={(e) => handleApiKeyChange(index, e.target.value)}
                   placeholder="API Key"
-                  className="block w-full rounded-md border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)] focus:border-[var(--accent-color)] focus:ring-[var(--accent-color)]"
+                  className="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
                 />
                 <button
                   type="button"
                   onClick={() => handleRemoveApiKey(index)}
-                  className="text-[var(--error-text)] hover:text-[var(--error-text-hover)]"
+                  className="text-red-500 hover:text-red-700"
                 >
                   Remove
                 </button>
@@ -379,7 +376,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
             <button
               type="button"
               onClick={handleAddApiKey}
-              className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-secondary-hover)]"
+              className="text-sm text-gray-500 hover:text-gray-700"
             >
               Add Key
             </button>
@@ -391,7 +388,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-medium text-sm hover:text-[var(--text-primary)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--border-color)]"
+          className="inline-flex items-center px-4 py-2 rounded-lg bg-gray-100 text-gray-500 font-medium text-sm hover:text-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
         >
           <svg
             className="mr-2 h-5 w-5"
@@ -410,7 +407,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onClos
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--accent-color)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg
             className="mr-2 h-5 w-5"

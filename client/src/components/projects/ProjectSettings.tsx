@@ -12,12 +12,11 @@ import {
   Switch,
   Divider
 } from '@heroui/react';
-import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import EndpointList from '../endpoints/EndpointList';
 import EndpointForm from '../endpoints/EndpointForm';
 import { projectsApi } from '../../utils/api';
 import { ProjectData } from '../../types/project';
-import { useTheme } from '../../contexts/ThemeContext';
 import { useAppContext } from '../../contexts/AppContext';
 
 interface FormData {
@@ -50,7 +49,6 @@ const ProjectSettings: React.FC = () => {
   const [originalData, setOriginalData] = useState<FormData | null>(null);
   const [showEndpointModal, setShowEndpointModal] = useState(false);
   const [isValidJson, setIsValidJson] = useState(true);
-  const { theme } = useTheme();
   const { deleteProject } = useAppContext();
 
   useEffect(() => {
@@ -249,7 +247,6 @@ const ProjectSettings: React.FC = () => {
                     extensions={[json()]}
                     onChange={handleJsonChange}
                     className={`border rounded-md ${!isValidJson ? 'border-[var(--error-border)]' : 'border-[var(--input-border)]'}`}
-                    theme={theme}
                   />
                   {!isValidJson && (
                     <p className="mt-2 text-sm text-[var(--error-text)]">Invalid JSON format</p>
@@ -288,7 +285,7 @@ const ProjectSettings: React.FC = () => {
                     <Button
                       size="sm"
                       variant="light"
-                      onClick={addApiKey}
+                      onPress={addApiKey}
                     >
                       Add Key
                     </Button>
@@ -307,7 +304,7 @@ const ProjectSettings: React.FC = () => {
                           isIconOnly
                           color="danger"
                           variant="light"
-                          onClick={() => removeApiKey(index)}
+                          onPress={() => removeApiKey(index)}
                           disabled={formData.apiKeys.length === 1}
                         >
                           <TrashIcon className="h-5 w-5" />
@@ -321,8 +318,8 @@ const ProjectSettings: React.FC = () => {
               <div className="flex justify-between items-center pt-6">
                 <Button
                   color="danger"
-                  variant="light"
-                  onClick={handleDelete}
+                  variant="solid"
+                  onPress={handleDelete}
                   startContent={<TrashIcon className="h-5 w-5" />}
                 >
                   Delete Project
@@ -331,6 +328,7 @@ const ProjectSettings: React.FC = () => {
                   <Button
                     type="submit"
                     color="primary"
+                    variant="solid"
                     isDisabled={!isValidJson || !hasUnsavedChanges()}
                   >
                     Save Changes
@@ -340,7 +338,6 @@ const ProjectSettings: React.FC = () => {
             </form>
           </CardBody>
         </Card>
-
         {id && (
           <Card>
             <CardBody>
