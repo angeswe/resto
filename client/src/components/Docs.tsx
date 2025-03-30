@@ -1,29 +1,33 @@
 import React from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
+import { dracula } from '@uiw/codemirror-theme-dracula';
+import { githubLight } from '@uiw/codemirror-theme-github';
+import { useAppContext } from '../contexts/AppContext';
 
 const Docs: React.FC = () => {
+  const { theme } = useAppContext();
   const exampleSchema = `{
-  "id": "(random:uuid)",
-  "name": "(random:name)",
-  "email": "(random:email)",
-  "createdAt": "(random:datetime)"
-}`;
+    "id": "(random:uuid)",
+    "name": "(random:string)",
+    "createdAt": "(random:datetime)",
+    "email": "(random:email)"
+  }`;
 
   const paginationExample = `[
-  {
-    "id": "(random:uuid)",
-    "name": "(random:name)",
-    "email": "(random:email)",
-    "createdAt": "(random:datetime)"
-  },
-  {
-    "id": "(random:uuid)",
-    "name": "(random:name)",
-    "email": "(random:email)",
-    "createdAt": "(random:datetime)"
-  }
-]`;
+    {
+      "id": "(random:uuid)",
+      "name": "(random:name)",
+      "email": "(random:email)",
+      "createdAt": "(random:datetime)"
+    },
+    {
+      "id": "(random:uuid)",
+      "name": "(random:name)",
+      "email": "(random:email)",
+      "createdAt": "(random:datetime)"
+    }
+  ]`;
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
@@ -112,8 +116,9 @@ const Docs: React.FC = () => {
               value={exampleSchema}
               height="160px"
               extensions={[json()]}
-              editable={false}
-              className="border rounded-md border-divider"
+              readOnly
+              theme={theme === 'dark' ? dracula : githubLight}
+              className="rounded-md"
             />
           </div>
           <p className="mb-4">
@@ -154,8 +159,9 @@ const Docs: React.FC = () => {
               value={paginationExample}
               height="160px"
               extensions={[json()]}
-              editable={false}
-              className="border rounded-md border-divider"
+              readOnly
+              theme={theme === 'dark' ? dracula : githubLight}
+              className="rounded-md"
             />
           </div>
         </section>

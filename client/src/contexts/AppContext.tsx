@@ -15,6 +15,17 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+
+  useEffect(() => {
+    // Sync with system theme on mount
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(isDark ? 'dark' : 'light');
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
   // Fetch all projects on initial load
   useEffect(() => {
@@ -107,6 +118,8 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
         projects,
         loading,
         error,
+        theme,
+        setTheme,
         fetchProjects,
         addProject,
         updateProject,

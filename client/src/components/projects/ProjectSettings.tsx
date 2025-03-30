@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
+import { dracula } from '@uiw/codemirror-theme-dracula';
+import { githubLight } from '@uiw/codemirror-theme-github';
 import {
   Card,
   CardBody,
@@ -38,6 +40,7 @@ const defaultJsonSchema = {
 const ProjectSettings: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { theme } = useAppContext();
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
@@ -241,13 +244,16 @@ const ProjectSettings: React.FC = () => {
                   <label className="block text-sm font-medium mb-2">
                     Default Schema
                   </label>
-                  <CodeMirror
-                    value={formData.defaultSchema}
-                    height="200px"
-                    extensions={[json()]}
-                    onChange={handleJsonChange}
-                    className={`border rounded-md ${!isValidJson ? 'border-[var(--error-border)]' : 'border-[var(--input-border)]'}`}
-                  />
+                  <div className={`border rounded-md ${!isValidJson ? 'border-[var(--error-border)]' : 'border-[var(--input-border)]'}`}>
+                    <CodeMirror
+                      value={formData.defaultSchema}
+                      height="200px"
+                      extensions={[json()]}
+                      onChange={handleJsonChange}
+                      theme={theme === 'dark' ? dracula : githubLight}
+                      className="rounded-md"
+                    />
+                  </div>
                   {!isValidJson && (
                     <p className="mt-2 text-sm text-[var(--error-text)]">Invalid JSON format</p>
                   )}
@@ -349,11 +355,12 @@ const ProjectSettings: React.FC = () => {
         {showEndpointModal && id && (
           <EndpointForm
             projectId={id}
-            onClose={() => setShowEndpointModal(false)}
-            onSuccess={() => {
+            onSubmit={() => {
               setShowEndpointModal(false);
               // Refresh endpoints list
+              // fetchEndpoints();
             }}
+            onCancel={() => setShowEndpointModal(false)}
           />
         )}
       </div>

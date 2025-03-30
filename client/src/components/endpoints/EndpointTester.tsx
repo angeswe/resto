@@ -3,7 +3,10 @@ import { Endpoint } from '../../types/project';
 import Modal from '../common/Modal';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
+import { dracula } from '@uiw/codemirror-theme-dracula';
+import { githubLight } from '@uiw/codemirror-theme-github';
 import { API_URLS } from '../../config/api';
+import { useAppContext } from '../../contexts/AppContext';
 
 interface EndpointTesterProps {
   isOpen: boolean;
@@ -20,6 +23,7 @@ interface ResponseInfo {
 }
 
 const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoint, projectId }) => {
+  const { theme } = useAppContext();
   const [requestBody, setRequestBody] = useState<string>(
     JSON.stringify(endpoint.schemaDefinition, null, 2)
   );
@@ -95,7 +99,8 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
                 height="200px"
                 extensions={[json()]}
                 onChange={(value) => setRequestBody(value)}
-                className="!bg-[var(--bg-secondary)]"
+                theme={theme === 'dark' ? dracula : githubLight}
+                className="!bg-[var(--bg-secondary)] rounded-md"
               />
             </div>
           </div>
@@ -136,6 +141,7 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
                     height="300px"
                     extensions={[json()]}
                     editable={false}
+                    theme={theme === 'dark' ? dracula : githubLight}
                     className="border rounded-md border-[var(--input-border)]"
                   />
                 </div>

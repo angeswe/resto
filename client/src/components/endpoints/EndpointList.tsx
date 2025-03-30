@@ -37,12 +37,6 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
     fetchEndpoints();
   }, [projectId]);
 
-  const handleEndpointSuccess = async () => {
-    await fetchEndpoints();
-    setShowCreateModal(false);
-    setShowEditModal(false);
-  };
-
   const handleEditClick = (endpoint: Endpoint) => {
     setSelectedEndpoint(endpoint);
     setShowEditModal(true);
@@ -129,14 +123,19 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
           setSelectedEndpoint(null);
         }} title={showCreateModal ? "Create Endpoint" : "Edit Endpoint"}>
           <EndpointForm
-            onClose={() => {
+            projectId={projectId}
+            endpoint={selectedEndpoint || undefined}
+            onSubmit={() => {
+              fetchEndpoints();
               setShowCreateModal(false);
               setShowEditModal(false);
               setSelectedEndpoint(null);
             }}
-            onSuccess={handleEndpointSuccess}
-            projectId={projectId}
-            endpoint={selectedEndpoint || undefined}
+            onCancel={() => {
+              setShowCreateModal(false);
+              setShowEditModal(false);
+              setSelectedEndpoint(null);
+            }}
           />
         </Modal>
       )}

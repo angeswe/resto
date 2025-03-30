@@ -47,8 +47,10 @@ export interface AppContextType {
   projects: Project[];
   loading: boolean;
   error: string | null;
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
+  fetchProjects: () => Promise<Project[]>;
   addProject: (data: ProjectData) => Promise<Project>;
   updateProject: (id: string, data: ProjectData) => Promise<Project>;
   deleteProject: (id: string) => Promise<void>;
-  fetchProjects: () => Promise<Project[]>;
 }

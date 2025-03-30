@@ -2,14 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
+import { dracula } from '@uiw/codemirror-theme-dracula';
+import { githubLight } from '@uiw/codemirror-theme-github';
 import CodeExamples from './CodeExamples';
 import { ArrowLeftIcon } from '@heroicons/react/24/solid';
 import { ClipboardIcon } from '@heroicons/react/24/outline';
 import { METHOD_STATUS_CODES } from '../../types/http';
 import { API_URLS } from '../../config/api';
 import { Endpoint } from '../../types/project';
+import { useAppContext } from '../../contexts/AppContext';
 
 const EndpointDocs: React.FC = () => {
+  const { theme } = useAppContext();
   const { projectId, endpointId } = useParams<{ projectId: string; endpointId: string }>();
   const [endpoint, setEndpoint] = useState<Endpoint | null>(null);
   const [loading, setLoading] = useState(true);
@@ -264,8 +268,9 @@ const EndpointDocs: React.FC = () => {
                     value={JSON.stringify(responseSchema, null, 2)}
                     height="200px"
                     extensions={[json()]}
-                    editable={false}
-                    className="border rounded-md border-divider"
+                    readOnly
+                    theme={theme === 'dark' ? dracula : githubLight}
+                    className="rounded-md"
                   />
                 </div>
               </div>
@@ -282,8 +287,9 @@ const EndpointDocs: React.FC = () => {
                     value={JSON.stringify(responseExample, null, 2)}
                     height="200px"
                     extensions={[json()]}
-                    editable={false}
-                    className="border rounded-md border-divider"
+                    readOnly
+                    theme={theme === 'dark' ? dracula : githubLight}
+                    className="rounded-md"
                   />
                 </div>
               </div>

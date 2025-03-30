@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
+import { dracula } from '@uiw/codemirror-theme-dracula';
+import { githubLight } from '@uiw/codemirror-theme-github';
 import { Button } from '@heroui/react';
 import { API_URLS } from '../../config/api';
+import { useAppContext } from '../../contexts/AppContext';
 
 interface CodeExamplesProps {
   projectId: string;
@@ -43,7 +46,8 @@ const CodeExamples: React.FC<CodeExamplesProps> = ({
   .then(response => console.log(response.data))
   .catch(error => console.error('Error:', error));`;
 
-  const [activeTab, setActiveTab] = React.useState<'curl' | 'fetch' | 'axios'>('curl');
+  const { theme } = useAppContext();
+  const [activeTab, setActiveTab] = useState<'curl' | 'fetch' | 'axios'>('curl');
 
   const codeExamples = {
     curl: curlExample,
@@ -56,19 +60,19 @@ const CodeExamples: React.FC<CodeExamplesProps> = ({
       <div className="flex space-x-2 mb-4">
         <Button
           variant={activeTab === 'curl' ? 'solid' : 'light'}
-          onClick={() => setActiveTab('curl')}
+          onPress={() => setActiveTab('curl')}
         >
           cURL
         </Button>
         <Button
           variant={activeTab === 'fetch' ? 'solid' : 'light'}
-          onClick={() => setActiveTab('fetch')}
+          onPress={() => setActiveTab('fetch')}
         >
           Fetch
         </Button>
         <Button
           variant={activeTab === 'axios' ? 'solid' : 'light'}
-          onClick={() => setActiveTab('axios')}
+          onPress={() => setActiveTab('axios')}
         >
           Axios
         </Button>
@@ -78,8 +82,9 @@ const CodeExamples: React.FC<CodeExamplesProps> = ({
           value={codeExamples[activeTab]}
           height="200px"
           extensions={[json()]}
-          editable={false}
-          className="border rounded-md border-divider"
+          readOnly
+          theme={theme === 'dark' ? dracula : githubLight}
+          className="rounded-md"
         />
       </div>
     </div>
