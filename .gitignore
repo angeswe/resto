@@ -33,3 +33,4 @@ pids
 # OS files
 .DS_Store
 Thumbs.db
+client/src/styles/tailwind.css

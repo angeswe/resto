@@ -447,6 +447,12 @@ router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, re
 router.put('/endpoints/:endpointId', async (req: Request, res: Response) => {
   try {
     const endpointId = req.params.endpointId;
+    console.log('Update request received:', {
+      endpointId,
+      body: req.body,
+      responseHttpStatus: req.body.responseHttpStatus
+    });
+
     if (!Types.ObjectId.isValid(endpointId)) {
       return res.status(400).json({
         success: false,
@@ -455,14 +461,22 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response) => {
       });
     }
 
+    const updateData = {
+      ...req.body,
+      path: req.body.path.startsWith('/') ? req.body.path : '/' + req.body.path
+    };
+    console.log('Update data:', updateData);
+
     const updatedEndpoint = await Endpoint.findByIdAndUpdate(
       endpointId,
-      {
-        ...req.body,
-        path: req.body.path.startsWith('/') ? req.body.path : '/' + req.body.path
-      },
-      { new: true }
+      updateData,
+      { 
+        new: true,
+        runValidators: true // Enable schema validation for update
+      }
     ).lean() as IEndpoint;
+
+    console.log('Updated endpoint:', updatedEndpoint);
 
     if (!updatedEndpoint) {
       return res.status(404).json({

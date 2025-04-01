@@ -13,6 +13,7 @@
     "@codemirror/lang-json": "^6.0.1",
     "@heroicons/react": "^2.2.0",
     "@heroui/react": "^2.7.5",
+    "@heroui/theme": "^2.4.12",
     "@types/codemirror": "^5.60.15",
     "@types/react-toastify": "^4.0.2",
     "@uiw/codemirror-theme-dracula": "^4.23.10",

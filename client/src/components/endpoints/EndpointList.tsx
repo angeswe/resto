@@ -125,11 +125,20 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
           <EndpointForm
             projectId={projectId}
             endpoint={selectedEndpoint || undefined}
-            onSubmit={() => {
-              fetchEndpoints();
-              setShowCreateModal(false);
-              setShowEditModal(false);
-              setSelectedEndpoint(null);
+            onSubmit={async (endpointData) => {
+              try {
+                if (selectedEndpoint) {
+                  await endpointsApi.updateEndpoint(selectedEndpoint.id, endpointData);
+                  toast.success('Endpoint updated successfully');
+                }
+                await fetchEndpoints();
+                setShowCreateModal(false);
+                setShowEditModal(false);
+                setSelectedEndpoint(null);
+              } catch (error) {
+                console.error('Failed to update endpoint:', error);
+                toast.error('Failed to update endpoint');
+              }
             }}
             onCancel={() => {
               setShowCreateModal(false);

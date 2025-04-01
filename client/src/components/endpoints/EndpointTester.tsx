@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Endpoint } from '../../types/project';
 import Modal from '../common/Modal';
 import CodeMirror from '@uiw/react-codemirror';
@@ -30,6 +30,12 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
   const [response, setResponse] = useState<ResponseInfo | null>(null);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      handleTest();
+    }
+  }, [isOpen]);
 
   const handleTest = async () => {
     try {
@@ -98,7 +104,10 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
                 value={requestBody}
                 height="200px"
                 extensions={[json()]}
-                onChange={(value) => setRequestBody(value)}
+                onChange={(value) => {
+                  setRequestBody(value);
+                  handleTest();
+                }}
                 theme={theme === 'dark' ? dracula : githubLight}
                 className="!bg-[var(--bg-secondary)] rounded-md"
               />
@@ -106,21 +115,15 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
           </div>
         )}
 
-        {/* Test Button */}
-        <div className="flex justify-end">
-          <button
-            onClick={handleTest}
-            disabled={loading}
-            className="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--accent-color)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-color)] disabled:opacity-50"
-          >
-            {loading ? 'Testing...' : 'Test Endpoint'}
-          </button>
-        </div>
-
         {/* Response or Error */}
-        {(response || error) && (
+        {(response || error || loading) && (
           <div className="space-y-2">
             <h3 className="text-lg font-medium text-[var(--text-primary)]">Response</h3>
+            {loading && (
+              <div className="text-sm font-mono p-2 rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                Testing endpoint...
+              </div>
+            )}
             {error ? (
               <div className="text-red-600 whitespace-pre-wrap">{error}</div>
             ) : response && (
