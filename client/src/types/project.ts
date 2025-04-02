@@ -25,7 +25,7 @@ export interface ProjectData {
 export interface EndpointData {
   path: string;
   method: EndpointMethod;
-  schemaDefinition: Record<string, any>;
+  schemaDefinition: object;
   count: number;
   supportPagination: boolean;
   requireAuth: boolean;

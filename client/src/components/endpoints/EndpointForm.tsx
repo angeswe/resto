@@ -11,9 +11,9 @@ import { Button, Input, Switch } from '@heroui/react';
 
 interface EndpointFormProps {
   projectId: string;
-  endpoint?: Endpoint;
   onSubmit: (endpoint: EndpointData) => void;
   onCancel: () => void;
+  initialData?: Endpoint;
 }
 
 interface FormData {
@@ -53,42 +53,43 @@ const defaultSchema = {
   email: "(random:email)"
 };
 
-const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onSubmit, onCancel }) => {
+const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCancel, initialData }) => {
+  console.log('Project ID:', projectId);
   const { theme } = useAppContext();
   const [formData, setFormData] = useState<FormData>({
-    path: endpoint?.path || '',
-    method: endpoint?.method || 'GET',
-    schemaDefinition: endpoint?.schemaDefinition ? JSON.stringify(endpoint.schemaDefinition, null, 2) : JSON.stringify(defaultSchema, null, 2),
-    count: endpoint?.count || 10,
-    supportPagination: endpoint?.supportPagination || false,
-    requireAuth: endpoint?.requireAuth || false,
-    apiKeys: endpoint?.apiKeys || [],
-    delay: endpoint?.delay || 0,
-    responseType: endpoint?.responseType || 'list',
-    parameterPath: endpoint?.parameterPath || ':id',
-    responseHttpStatus: endpoint?.responseHttpStatus || '200'
+    path: initialData?.path || '',
+    method: initialData?.method || 'GET',
+    schemaDefinition: initialData?.schemaDefinition ? JSON.stringify(initialData.schemaDefinition, null, 2) : JSON.stringify(defaultSchema, null, 2),
+    count: initialData?.count || 10,
+    supportPagination: initialData?.supportPagination || false,
+    requireAuth: initialData?.requireAuth || false,
+    apiKeys: initialData?.apiKeys || [],
+    delay: initialData?.delay || 0,
+    responseType: initialData?.responseType || 'list',
+    parameterPath: initialData?.parameterPath || ':id',
+    responseHttpStatus: initialData?.responseHttpStatus || '200'
   });
 
   const [isValidJson, setIsValidJson] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (endpoint) {
+    if (initialData) {
       setFormData({
-        path: endpoint.path,
-        method: endpoint.method,
-        schemaDefinition: endpoint.schemaDefinition ? JSON.stringify(endpoint.schemaDefinition, null, 2) : JSON.stringify(defaultSchema, null, 2),
-        count: endpoint.count || 10,
-        supportPagination: endpoint.supportPagination || false,
-        requireAuth: endpoint.requireAuth || false,
-        apiKeys: endpoint.apiKeys || [],
-        delay: endpoint.delay || 0,
-        responseType: endpoint.responseType || 'list',
-        parameterPath: endpoint.parameterPath || ':id',
-        responseHttpStatus: endpoint.responseHttpStatus || '200'
+        path: initialData.path,
+        method: initialData.method,
+        schemaDefinition: initialData.schemaDefinition ? JSON.stringify(initialData.schemaDefinition, null, 2) : JSON.stringify(defaultSchema, null, 2),
+        count: initialData.count || 10,
+        supportPagination: initialData.supportPagination || false,
+        requireAuth: initialData.requireAuth || false,
+        apiKeys: initialData.apiKeys || [],
+        delay: initialData.delay || 0,
+        responseType: initialData.responseType || 'list',
+        parameterPath: initialData.parameterPath || ':id',
+        responseHttpStatus: initialData.responseHttpStatus || '200'
       });
     }
-  }, [endpoint]);
+  }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -369,18 +370,16 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, endpoint, onSubm
       <div className="flex justify-end space-x-4">
         <Button
           type="button"
-          onClick={onCancel}
           variant="flat"
+          onClick={onCancel}
         >
           Cancel
         </Button>
         <Button
           type="submit"
-          variant="solid"
-          color="primary"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !isValidJson}
         >
-          {endpoint ? 'Update' : 'Create'} Endpoint
+          {isSubmitting ? 'Saving...' : 'Save'}
         </Button>
       </div>
     </form>
