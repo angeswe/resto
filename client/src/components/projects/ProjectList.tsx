@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { PlusIcon, FolderIcon } from "@heroicons/react/24/outline";
 import { Button, Card, CardBody } from "@heroui/react";
@@ -7,7 +7,12 @@ import Loading from "../common/Loading";
 import { useAppContext } from "../../contexts/AppContext";
 
 const ProjectList: FC = () => {
-  const { projects, loading, error, deleteProject } = useAppContext();
+  const { projects, loading, error, deleteProject, fetchProjects } = useAppContext();
+
+  // Fetch latest projects when component mounts
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   // Sort projects by creation date (newest first)
   const sortedProjects = [...projects].sort((a, b) =>
@@ -16,12 +21,7 @@ const ProjectList: FC = () => {
 
   // Handle project deletion
   const handleDeleteProject = async (projectId: string) => {
-    try {
-      await deleteProject(projectId);
-    } catch (err) {
-      // Error is already handled in the context
-      console.error("Delete project error:", err);
-    }
+    await deleteProject(projectId);
   };
 
   if (loading) {

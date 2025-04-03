@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, FC, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, FC, ReactNode } from "react";
 import { projectsApi } from "../utils/api";
 import { endpointsApi } from "../utils/api"; // Import the endpointsApi module
 import { toast } from "react-toastify";
@@ -28,13 +28,8 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
-  // Fetch all projects on initial load
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
   // Function to fetch all projects
-  const fetchProjects = async (): Promise<Project[]> => {
+  const fetchProjects = useCallback(async (): Promise<Project[]> => {
     try {
       setLoading(true);
       setError(null);
@@ -47,7 +42,12 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectsApi, setProjects, setLoading, setError]);
+
+  // Fetch all projects on initial load
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   // Add a new project
   const addProject = async (projectData: ProjectData): Promise<Project> => {
@@ -105,6 +105,7 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
       // Optimistic update: remove from local state first
       setProjects(prev => prev.filter(project => project.id !== projectId));
 
+      // Only show success toast after successful deletion
       await projectsApi.deleteProject(projectId);
       toast.success("Project deleted successfully");
     } catch (err) {
@@ -126,11 +127,25 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
       // Optimistic update: add endpoint to local state first
       setProjects(prev => prev.map(project => 
         project.id === projectId 
-          ? { ...project, endpoints: [...(project.endpoints || []), endpointData] }
+          ? { 
+              ...project, 
+              endpoints: [...(project.endpoints || []), endpointData]
+            } 
           : project
       ));
 
-      await endpointsApi.createEndpoint(projectId, endpointData);
+      const response = await endpointsApi.createEndpoint(projectId, endpointData);
+      
+      // Update with the actual endpoint data from the server
+      setProjects(prev => prev.map(project => 
+        project.id === projectId 
+          ? { 
+              ...project, 
+              endpoints: [...(project.endpoints || []), response]
+            } 
+          : project
+      ));
+
       toast.success("Endpoint added successfully");
     } catch (err) {
       // If addition fails, revert to previous state
@@ -160,7 +175,20 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
           : project
       ));
 
-      await endpointsApi.updateEndpoint(endpointId, endpointData);
+      const response = await endpointsApi.updateEndpoint(endpointId, endpointData);
+      
+      // Update with the actual endpoint data from the server
+      setProjects(prev => prev.map(project => 
+        project.id === projectId 
+          ? { 
+              ...project, 
+              endpoints: project.endpoints?.map(endpoint => 
+                endpoint.id === endpointId ? { ...endpoint, ...response } : endpoint
+              ) || []
+            }
+          : project
+      ));
+
       toast.success("Endpoint updated successfully");
     } catch (err) {
       // If update fails, revert to previous state
