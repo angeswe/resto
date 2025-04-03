@@ -38,14 +38,11 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
       setLoading(true);
       setError(null);
       const data = await projectsApi.getProjects();
-      console.log('Fetched projects:', data); // Debug log
       setProjects(data);
       return data;
-    } catch (err: unknown) {
-      const errorMessage = (err as any).response?.data?.error || "An error occurred while loading projects";
-      setError(errorMessage);
-      console.error("Error fetching projects:", err);
-      return [];
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch projects');
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -57,14 +54,12 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
       setLoading(true);
       setError(null);
       const newProject = await projectsApi.createProject(projectData);
-      setProjects([...projects, newProject]);
+      setProjects(prev => [...prev, newProject]);
       toast.success("Project created successfully");
       return newProject;
-    } catch (err: unknown) {
-      const errorMessage =
-        (err as any).response?.data?.error || "Failed to create project";
-      setError(errorMessage);
-      toast.error(errorMessage);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add project');
+      toast.error(err instanceof Error ? err.message : 'Failed to add project');
       throw err;
     } finally {
       setLoading(false);
@@ -76,17 +71,24 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
     try {
       setLoading(true);
       setError(null);
+      
+      // Optimistic update: update local state first
+      setProjects(prev => prev.map(project => 
+        project.id === projectId ? { ...project, ...projectData } : project
+      ));
+
       const updatedProject = await projectsApi.updateProject(projectId, projectData);
-      setProjects(
-        projects.map((p) => (p.id === projectId ? updatedProject : p))
-      );
+      // Update with the actual response
+      setProjects(prev => prev.map(project => 
+        project.id === projectId ? updatedProject : project
+      ));
+      
       toast.success("Project updated successfully");
       return updatedProject;
-    } catch (err: unknown) {
-      const errorMessage =
-        (err as any).response?.data?.error || "Failed to update project";
-      setError(errorMessage);
-      toast.error(errorMessage);
+    } catch (err) {
+      // If update fails, revert to previous state
+      setError(err instanceof Error ? err.message : 'Failed to update project');
+      toast.error(err instanceof Error ? err.message : 'Failed to update project');
       throw err;
     } finally {
       setLoading(false);
@@ -98,14 +100,16 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
     try {
       setLoading(true);
       setError(null);
+      
+      // Optimistic update: remove from local state first
+      setProjects(prev => prev.filter(project => project.id !== projectId));
+
       await projectsApi.deleteProject(projectId);
-      setProjects(projects.filter((p) => p.id !== projectId));
       toast.success("Project deleted successfully");
-    } catch (err: unknown) {
-      const errorMessage =
-        (err as any).response?.data?.error || "Failed to delete project";
-      setError(errorMessage);
-      toast.error(errorMessage);
+    } catch (err) {
+      // If deletion fails, revert to previous state
+      setError(err instanceof Error ? err.message : 'Failed to delete project');
+      toast.error(err instanceof Error ? err.message : 'Failed to delete project');
       throw err;
     } finally {
       setLoading(false);

@@ -15,6 +15,7 @@ import EndpointList from '../endpoints/EndpointList';
 import { projectsApi } from '../../utils/api';
 import { ProjectData } from '../../types/project';
 import { useAppContext } from '../../contexts/AppContext';
+import { useTabContext } from '../../contexts/TabContext';
 import ApiKeyManager from './ApiKeyManager';
 import SchemaEditor from './SchemaEditor';
 import ProjectDangerZone from './ProjectDangerZone';
@@ -38,7 +39,8 @@ const defaultJsonSchema = {
 const ProjectSettings: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { theme, deleteProject } = useAppContext();
+  const { theme, updateProject, deleteProject } = useAppContext();
+  const { activeTab, setActiveTab } = useTabContext();
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
@@ -89,6 +91,18 @@ const ProjectSettings: React.FC = () => {
     fetchProject();
   }, [id, navigate]);
 
+  const hasUnsavedChanges = () => {
+    if (!originalData) return false;
+    return (
+      originalData.name !== formData.name ||
+      originalData.description !== formData.description ||
+      originalData.defaultSchema !== formData.defaultSchema ||
+      originalData.defaultCount !== formData.defaultCount ||
+      originalData.requireAuth !== formData.requireAuth ||
+      JSON.stringify(originalData.apiKeys) !== JSON.stringify(formData.apiKeys)
+    );
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
@@ -138,18 +152,6 @@ const ProjectSettings: React.FC = () => {
     }));
   };
 
-  const hasUnsavedChanges = () => {
-    if (!originalData) return false;
-    return (
-      originalData.name !== formData.name ||
-      originalData.description !== formData.description ||
-      originalData.defaultSchema !== formData.defaultSchema ||
-      originalData.defaultCount !== formData.defaultCount ||
-      originalData.requireAuth !== formData.requireAuth ||
-      JSON.stringify(originalData.apiKeys) !== JSON.stringify(formData.apiKeys)
-    );
-  };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!id) return;
@@ -172,7 +174,7 @@ const ProjectSettings: React.FC = () => {
         apiKeys: formData.apiKeys.filter(key => key.trim() !== '')
       };
 
-      await projectsApi.updateProject(id, projectData);
+      await updateProject(id, projectData);
       toast.success('Project settings updated');
       setOriginalData(formData);
     } catch (error) {
@@ -199,17 +201,9 @@ const ProjectSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <Tabs fullWidth>
-        <Tab title="Project">
+      <Tabs fullWidth selectedKey={activeTab as string} onSelectionChange={setActiveTab}>
+        <Tab id="settings" title="Settings">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                isDisabled={!hasUnsavedChanges()}
-              >
-                Save Changes
-              </Button>
-            </div>
             <Card>
               <CardBody className="space-y-4">
                 <div>
@@ -275,15 +269,27 @@ const ProjectSettings: React.FC = () => {
                 )}
               </CardBody>
             </Card>
-            <ProjectDangerZone className="rounded-none" onDelete={handleDelete} />
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                isDisabled={!hasUnsavedChanges()}
+              >
+                Save Changes
+              </Button>
+            </div>
           </form>
         </Tab>
-        <Tab title="Endpoints">
+
+        <Tab id="endpoints" title="Endpoints">
           <Card>
             <CardBody>
               <EndpointList projectId={id!} />
             </CardBody>
           </Card>
+        </Tab>
+
+        <Tab id="danger" title="Danger Zone">
+          <ProjectDangerZone onDelete={handleDelete} />
         </Tab>
       </Tabs>
     </div>

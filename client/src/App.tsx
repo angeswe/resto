@@ -10,6 +10,7 @@ import EndpointDocs from './components/endpoints/EndpointDocs';
 import NewProject from './components/projects/NewProject';
 import Docs from './components/Docs';
 import { AppContextProvider, useAppContext } from './contexts/AppContext';
+import { TabContextProvider } from './contexts/TabContext';
 import "./index.css";
 
 const AppContent: React.FC = () => {
@@ -40,11 +41,13 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <HeroUIProvider>
-      <AppContextProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </AppContextProvider>
+      <Router>
+        <AppContextProvider>
+          <TabContextProvider>
+            <AppContent />
+          </TabContextProvider>
+        </AppContextProvider>
+      </Router>
     </HeroUIProvider>
   );
 };
