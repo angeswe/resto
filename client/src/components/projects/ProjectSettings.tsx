@@ -161,7 +161,6 @@ const ProjectSettings: React.FC = () => {
       try {
         defaultSchemaObj = JSON.parse(formData.defaultSchema);
       } catch (error) {
-        toast.error('Invalid JSON schema');
         return;
       }
 
@@ -175,11 +174,9 @@ const ProjectSettings: React.FC = () => {
       };
 
       await updateProject(id, projectData);
-      toast.success('Project settings updated');
       setOriginalData(formData);
     } catch (error) {
       console.error('Error updating project:', error);
-      toast.error('Failed to update project');
     }
   };
 
@@ -191,11 +188,9 @@ const ProjectSettings: React.FC = () => {
     try {
       if (!id) return;
       await deleteProject(id);
-      toast.success('Project deleted');
       navigate('/');
     } catch (error) {
       console.error('Error deleting project:', error);
-      toast.error('Failed to delete project');
     }
   };
 
@@ -254,7 +249,7 @@ const ProjectSettings: React.FC = () => {
                   </div>
                   <Switch
                     name="requireAuth"
-                    checked={formData.requireAuth}
+                    isSelected={formData.requireAuth}
                     onChange={handleCheckboxChange}
                   />
                 </div>

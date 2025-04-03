@@ -2,7 +2,7 @@ export interface Project {
   id: string;
   name: string;
   description: string;
-  defaultSchema: object;
+  defaultSchema: string;
   defaultCount: number;
   requireAuth: boolean;
   apiKeys: string[];
@@ -17,7 +17,7 @@ export type ResponseType = 'list' | 'single';
 export interface ProjectData {
   name: string;
   description: string;
-  defaultSchema?: object;
+  defaultSchema?: string;
   defaultCount?: number;
   requireAuth?: boolean;
   apiKeys?: string[];
@@ -26,7 +26,7 @@ export interface ProjectData {
 export interface EndpointData {
   path: string;
   method: EndpointMethod;
-  schemaDefinition: object;
+  schemaDefinition: string;
   count: number;
   supportPagination: boolean;
   requireAuth: boolean;

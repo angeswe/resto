@@ -13,7 +13,7 @@ interface EndpointFormProps {
   projectId: string;
   onSubmit: (endpoint: EndpointData) => void;
   onCancel: () => void;
-  initialData?: Endpoint;
+  initialData?: Endpoint | EndpointData;
 }
 
 interface FormData {
@@ -57,17 +57,17 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
   console.log('Project ID:', projectId);
   const { theme } = useAppContext();
   const [formData, setFormData] = useState<FormData>({
-    path: initialData?.path || '',
-    method: initialData?.method || 'GET',
-    schemaDefinition: initialData?.schemaDefinition ? JSON.stringify(initialData.schemaDefinition, null, 2) : JSON.stringify(defaultSchema, null, 2),
-    count: initialData?.count || 10,
-    supportPagination: initialData?.supportPagination || false,
-    requireAuth: initialData?.requireAuth || false,
-    apiKeys: initialData?.apiKeys || [],
-    delay: initialData?.delay || 0,
-    responseType: initialData?.responseType || 'list',
-    parameterPath: initialData?.parameterPath || ':id',
-    responseHttpStatus: initialData?.responseHttpStatus || '200'
+    path: (initialData as Endpoint)?.path || (initialData as EndpointData)?.path || '',
+    method: (initialData as Endpoint)?.method || (initialData as EndpointData)?.method || 'GET',
+    schemaDefinition: (initialData as Endpoint)?.schemaDefinition ? JSON.stringify((initialData as Endpoint).schemaDefinition, null, 2) : (initialData as EndpointData)?.schemaDefinition ? JSON.stringify((initialData as EndpointData).schemaDefinition, null, 2) : JSON.stringify(defaultSchema, null, 2),
+    count: (initialData as Endpoint)?.count || (initialData as EndpointData)?.count || 10,
+    supportPagination: (initialData as Endpoint)?.supportPagination || (initialData as EndpointData)?.supportPagination || false,
+    requireAuth: (initialData as Endpoint)?.requireAuth || (initialData as EndpointData)?.requireAuth || false,
+    apiKeys: (initialData as Endpoint)?.apiKeys || (initialData as EndpointData)?.apiKeys || [],
+    delay: (initialData as Endpoint)?.delay || (initialData as EndpointData)?.delay || 0,
+    responseType: (initialData as Endpoint)?.responseType || (initialData as EndpointData)?.responseType || 'list',
+    parameterPath: (initialData as Endpoint)?.parameterPath || (initialData as EndpointData)?.parameterPath || ':id',
+    responseHttpStatus: (initialData as Endpoint)?.responseHttpStatus || (initialData as EndpointData)?.responseHttpStatus || '200'
   });
 
   const [isValidJson, setIsValidJson] = useState(true);
@@ -76,17 +76,17 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
   useEffect(() => {
     if (initialData) {
       setFormData({
-        path: initialData.path,
-        method: initialData.method,
-        schemaDefinition: initialData.schemaDefinition ? JSON.stringify(initialData.schemaDefinition, null, 2) : JSON.stringify(defaultSchema, null, 2),
-        count: initialData.count || 10,
-        supportPagination: initialData.supportPagination || false,
-        requireAuth: initialData.requireAuth || false,
-        apiKeys: initialData.apiKeys || [],
-        delay: initialData.delay || 0,
-        responseType: initialData.responseType || 'list',
-        parameterPath: initialData.parameterPath || ':id',
-        responseHttpStatus: initialData.responseHttpStatus || '200'
+        path: (initialData as Endpoint)?.path || (initialData as EndpointData)?.path,
+        method: (initialData as Endpoint)?.method || (initialData as EndpointData)?.method,
+        schemaDefinition: (initialData as Endpoint)?.schemaDefinition ? JSON.stringify((initialData as Endpoint).schemaDefinition, null, 2) : (initialData as EndpointData)?.schemaDefinition ? JSON.stringify((initialData as EndpointData).schemaDefinition, null, 2) : JSON.stringify(defaultSchema, null, 2),
+        count: (initialData as Endpoint)?.count || (initialData as EndpointData)?.count || 10,
+        supportPagination: (initialData as Endpoint)?.supportPagination || (initialData as EndpointData)?.supportPagination || false,
+        requireAuth: (initialData as Endpoint)?.requireAuth || (initialData as EndpointData)?.requireAuth || false,
+        apiKeys: (initialData as Endpoint)?.apiKeys || (initialData as EndpointData)?.apiKeys || [],
+        delay: (initialData as Endpoint)?.delay || (initialData as EndpointData)?.delay || 0,
+        responseType: (initialData as Endpoint)?.responseType || (initialData as EndpointData)?.responseType || 'list',
+        parameterPath: (initialData as Endpoint)?.parameterPath || (initialData as EndpointData)?.parameterPath || ':id',
+        responseHttpStatus: (initialData as Endpoint)?.responseHttpStatus || (initialData as EndpointData)?.responseHttpStatus || '200'
       });
     }
   }, [initialData]);
@@ -328,7 +328,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
           <Switch
             id="requireAuth"
             name="requireAuth"
-            checked={formData.requireAuth}
+            isSelected={formData.requireAuth}
             onChange={handleChange}
           />
           <label htmlFor="requireAuth" className="text-sm font-medium">

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Endpoint } from '../../types/project';
+import { Endpoint, Project, EndpointMethod, ResponseType } from '../../types/project';
 import { toast } from 'react-toastify';
 import EndpointTester from './EndpointTester';
 import EndpointCard from './EndpointCard';
-import { endpointsApi } from '../../utils/api';
+import { endpointsApi, projectsApi } from '../../utils/api';
 import EndpointModal from './EndpointModal';
 import { Button } from '@heroui/react';
 
@@ -18,6 +18,7 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedEndpoint, setSelectedEndpoint] = useState<Endpoint | null>(null);
+  const [project, setProject] = useState<Project | null>(null);
 
   const fetchEndpoints = async () => {
     try {
@@ -34,6 +35,18 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
 
   useEffect(() => {
     fetchEndpoints();
+  }, [projectId]);
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const data = await projectsApi.getProject(projectId);
+        setProject(data);
+      } catch (error) {
+        console.error('Failed to fetch project:', error);
+      }
+    };
+    fetchProject();
   }, [projectId]);
 
   const handleEditClick = (endpoint: Endpoint) => {
@@ -53,11 +66,9 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
 
     try {
       await endpointsApi.deleteEndpoint(endpoint.id);
-      toast.success('Endpoint deleted successfully');
       await fetchEndpoints();
     } catch (error) {
       console.error('Failed to delete endpoint:', error);
-      toast.error('Failed to delete endpoint');
     }
   };
 
@@ -117,6 +128,19 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
           onClose={() => setShowCreateModal(false)}
           projectId={projectId}
           onUpdate={fetchEndpoints}
+          initialData={{
+            requireAuth: project?.requireAuth || false,
+            path: '',
+            method: 'GET' as EndpointMethod,
+            schemaDefinition: project?.defaultSchema || '',
+            count: 10,
+            supportPagination: true,
+            apiKeys: [],
+            delay: 0,
+            responseType: 'list' as ResponseType,
+            parameterPath: '',
+            responseHttpStatus: '200'
+          }}
         />
       )}
 
