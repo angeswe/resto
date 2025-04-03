@@ -13,7 +13,9 @@ export const TabContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     const savedTab = localStorage.getItem('projectSettingsTab');
     if (savedTab) {
-      setActiveTab(savedTab);
+      setActiveTab(savedTab as Key);
+    } else {
+      setActiveTab('settings' as Key);
     }
   }, []);
 
@@ -35,5 +37,3 @@ export const useTabContext = () => {
   }
   return context;
 };
-
-export default TabContext;

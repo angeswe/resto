@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
-import { Project, ProjectData, Endpoint, EndpointData } from "../types/project";
+import { Project, ProjectData, Endpoint } from "../types/project";
 import { API_URLS } from '../config/api';
 
 const api: AxiosInstance = axios.create({
@@ -49,12 +49,6 @@ export const projectsApi = {
     try {
       console.log('API: Creating project with data:', projectData);
       const response: AxiosResponse<ApiResponse<Project>> = await api.post('/projects', projectData);
-      console.log('API: Received response:', response.data);
-
-      if (!response.data.success || !response.data.data) {
-        throw new Error('Failed to create project');
-      }
-
       return response.data.data;
     } catch (error) {
       console.error('API Error:', error);
@@ -65,9 +59,11 @@ export const projectsApi = {
   // Update a project
   updateProject: async (projectId: string, projectData: ProjectData): Promise<Project> => {
     try {
+      console.log('API: Updating project with ID:', projectId);
       const response: AxiosResponse<ApiResponse<Project>> = await api.put(`/projects/${projectId}`, projectData);
       return response.data.data;
     } catch (error) {
+      console.error('API Error:', error);
       throw error;
     }
   },
@@ -75,8 +71,10 @@ export const projectsApi = {
   // Delete a project
   deleteProject: async (projectId: string): Promise<void> => {
     try {
+      console.log('API: Deleting project with ID:', projectId);
       await api.delete(`/projects/${projectId}`);
     } catch (error) {
+      console.error('API Error:', error);
       throw error;
     }
   },
@@ -87,10 +85,8 @@ export const endpointsApi = {
   // Get all endpoints for a project
   getEndpoints: async (projectId: string): Promise<Endpoint[]> => {
     try {
-      console.log('API: Fetching endpoints for project:', projectId);
       const response: AxiosResponse<ApiResponse<Endpoint[]>> = await api.get(`/projects/${projectId}/endpoints`);
-      console.log('API: Received endpoints:', response.data);
-      return response.data.data || [];
+      return response.data.data;
     } catch (error) {
       console.error('API Error:', error);
       throw error;
@@ -103,25 +99,15 @@ export const endpointsApi = {
       const response: AxiosResponse<ApiResponse<Endpoint>> = await api.get(`/endpoints/${endpointId}`);
       return response.data.data;
     } catch (error) {
+      console.error('API Error:', error);
       throw error;
     }
   },
 
   // Create a new endpoint
-  createEndpoint: async (projectId: string, endpointData: EndpointData): Promise<Endpoint> => {
+  createEndpoint: async (projectId: string, endpointData: any): Promise<Endpoint> => {
     try {
-      console.log('API: Creating endpoint:', { projectId, endpointData });
-      const response: AxiosResponse<ApiResponse<Endpoint>> = await api.post(`/projects/${projectId}/endpoints`, {
-        ...endpointData,
-        path: endpointData.path.startsWith('/') ? endpointData.path : '/' + endpointData.path,
-        method: endpointData.method.toUpperCase()
-      });
-      console.log('API: Create response:', response.data);
-
-      if (!response.data.success || !response.data.data) {
-        throw new Error(response.data.error || 'Failed to create endpoint');
-      }
-
+      const response: AxiosResponse<ApiResponse<Endpoint>> = await api.post(`/projects/${projectId}/endpoints`, endpointData);
       return response.data.data;
     } catch (error) {
       console.error('API Error:', error);
@@ -130,16 +116,9 @@ export const endpointsApi = {
   },
 
   // Update an endpoint
-  updateEndpoint: async (endpointId: string, endpointData: EndpointData): Promise<Endpoint> => {
+  updateEndpoint: async (endpointId: string, endpointData: any): Promise<Endpoint> => {
     try {
-      console.log('API: Updating endpoint:', endpointId, endpointData);
       const response: AxiosResponse<ApiResponse<Endpoint>> = await api.put(`/endpoints/${endpointId}`, endpointData);
-      console.log('API: Update response:', response.data);
-
-      if (!response.data.success) {
-        throw new Error('Failed to update endpoint');
-      }
-
       return response.data.data;
     } catch (error) {
       console.error('API Error:', error);
@@ -152,16 +131,11 @@ export const endpointsApi = {
     try {
       await api.delete(`/endpoints/${endpointId}`);
     } catch (error) {
+      console.error('API Error:', error);
       throw error;
     }
   },
 };
-
-interface MockApiRequestOptions {
-  method?: string;
-  data?: any;
-  headers?: Record<string, string>;
-}
 
 // Mock API utility to make requests to the generated endpoints
 export const mockApi = {
@@ -169,7 +143,7 @@ export const mockApi = {
   request: async (
     projectId: string,
     path: string,
-    { method = "GET", data = null, headers = {} }: MockApiRequestOptions = {}
+    { method = "GET", data = null, headers = {} }: { method?: string; data?: any; headers?: Record<string, string> } = {}
   ): Promise<any> => {
     try {
       const response = await api.request({

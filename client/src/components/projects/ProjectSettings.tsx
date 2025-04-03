@@ -202,7 +202,7 @@ const ProjectSettings: React.FC = () => {
   return (
     <div className="space-y-6">
       <Tabs fullWidth selectedKey={activeTab as string} onSelectionChange={setActiveTab}>
-        <Tab id="settings" title="Settings">
+        <Tab key="settings" title="Settings">
           <form onSubmit={handleSubmit} className="space-y-6">
             <Card>
               <CardBody className="space-y-4">
@@ -280,7 +280,7 @@ const ProjectSettings: React.FC = () => {
           </form>
         </Tab>
 
-        <Tab id="endpoints" title="Endpoints">
+        <Tab key="endpoints" title="Endpoints">
           <Card>
             <CardBody>
               <EndpointList projectId={id!} />
@@ -288,7 +288,7 @@ const ProjectSettings: React.FC = () => {
           </Card>
         </Tab>
 
-        <Tab id="danger" title="Danger Zone">
+        <Tab key="danger" title="Danger Zone">
           <ProjectDangerZone onDelete={handleDelete} />
         </Tab>
       </Tabs>

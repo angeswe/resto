@@ -54,4 +54,7 @@ export interface AppContextType {
   addProject: (data: ProjectData) => Promise<Project>;
   updateProject: (id: string, data: ProjectData) => Promise<Project>;
   deleteProject: (id: string) => Promise<void>;
+  addEndpoint: (projectId: string, endpointData: any) => Promise<void>;
+  updateEndpoint: (projectId: string, endpointId: string, endpointData: any) => Promise<void>;
+  deleteEndpoint: (projectId: string, endpointId: string) => Promise<void>;
 }

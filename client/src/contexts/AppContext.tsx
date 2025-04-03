@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, FC, ReactNode } from "react";
 import { projectsApi } from "../utils/api";
+import { endpointsApi } from "../utils/api"; // Import the endpointsApi module
 import { toast } from "react-toastify";
 import { AppContextType, Project, ProjectData } from "../types/project";
 
@@ -116,6 +117,89 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
     }
   };
 
+  // Add a new endpoint to a project
+  const addEndpoint = async (projectId: string, endpointData: any): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Optimistic update: add endpoint to local state first
+      setProjects(prev => prev.map(project => 
+        project.id === projectId 
+          ? { ...project, endpoints: [...(project.endpoints || []), endpointData] }
+          : project
+      ));
+
+      await endpointsApi.createEndpoint(projectId, endpointData);
+      toast.success("Endpoint added successfully");
+    } catch (err) {
+      // If addition fails, revert to previous state
+      setError(err instanceof Error ? err.message : 'Failed to add endpoint');
+      toast.error(err instanceof Error ? err.message : 'Failed to add endpoint');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update an endpoint in a project
+  const updateEndpoint = async (projectId: string, endpointId: string, endpointData: any): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Optimistic update: update endpoint in local state first
+      setProjects(prev => prev.map(project => 
+        project.id === projectId 
+          ? { 
+              ...project, 
+              endpoints: project.endpoints?.map(endpoint => 
+                endpoint.id === endpointId ? { ...endpoint, ...endpointData } : endpoint
+              ) || []
+            }
+          : project
+      ));
+
+      await endpointsApi.updateEndpoint(endpointId, endpointData);
+      toast.success("Endpoint updated successfully");
+    } catch (err) {
+      // If update fails, revert to previous state
+      setError(err instanceof Error ? err.message : 'Failed to update endpoint');
+      toast.error(err instanceof Error ? err.message : 'Failed to update endpoint');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete an endpoint from a project
+  const deleteEndpoint = async (projectId: string, endpointId: string): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Optimistic update: remove endpoint from local state first
+      setProjects(prev => prev.map(project => 
+        project.id === projectId 
+          ? { 
+              ...project, 
+              endpoints: project.endpoints?.filter(endpoint => endpoint.id !== endpointId) || []
+            }
+          : project
+      ));
+
+      await endpointsApi.deleteEndpoint(endpointId);
+      toast.success("Endpoint deleted successfully");
+    } catch (err) {
+      // If deletion fails, revert to previous state
+      setError(err instanceof Error ? err.message : 'Failed to delete endpoint');
+      toast.error(err instanceof Error ? err.message : 'Failed to delete endpoint');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -128,6 +212,9 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
         addProject,
         updateProject,
         deleteProject,
+        addEndpoint,
+        updateEndpoint,
+        deleteEndpoint,
       }}
     >
       {children}
