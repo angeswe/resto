@@ -11,7 +11,7 @@ export interface Project {
   endpoints: Endpoint[];
 }
 
-export type EndpointMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+export type EndpointMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 export type ResponseType = 'list' | 'single';
 
 export interface ProjectData {
@@ -35,6 +35,9 @@ export interface EndpointData {
   responseType: ResponseType;
   parameterPath: string;
   responseHttpStatus: string;
+  description?: string;
+  request?: any;
+  response?: any;
 }
 
 export interface Endpoint extends EndpointData {

@@ -265,24 +265,39 @@ function extractPathParameters(urlPath: string, endpointPath: string): Record<st
   return params;
 }
 
-// Debug route to list all endpoints
+// Debug route to list all endpoints (Development only)
 router.get('/debug', async (req: Request, res: Response) => {
   try {
-    const endpoints = await Endpoint.find().lean();
+    // Only allow access if request has valid projectId
+    if (!req.projectId || !Types.ObjectId.isValid(req.projectId.toString())) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Debug access requires valid project ID'
+      });
+    }
+
+    // Only show endpoints for this project
+    const endpoints = await Endpoint.find({ projectId: req.projectId }).lean();
+    
+    // Filter out sensitive information
+    const filteredEndpoints = endpoints.map(ep => ({
+      id: ep._id,
+      path: ep.path,
+      method: ep.method,
+      description: ep.description,
+      createdAt: ep.createdAt,
+      updatedAt: ep.updatedAt
+    }));
+
     res.json({
-      endpointCount: endpoints.length,
-      endpoints: endpoints.map(ep => ({
-        path: ep.path,
-        method: ep.method,
-        projectId: ep.projectId.toString(),
-        id: ep._id.toString()
-      }))
+      endpointCount: filteredEndpoints.length,
+      endpoints: filteredEndpoints
     });
   } catch (error) {
-    console.error('Error in debug route:', error);
+    console.error('Error getting endpoints:', error);
     res.status(500).json({
-      error: 'Internal Server Error',
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: 'Server Error',
+      message: 'Failed to fetch endpoints'
     });
   }
 });

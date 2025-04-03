@@ -1,7 +1,8 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { Endpoint } from '../models/Endpoint';
-import { IEndpoint } from '../types';
-import mongoose, { Types } from 'mongoose';
+import { Project } from '../models/Project';
+import { Types } from 'mongoose';
+import ErrorResponse from '../utils/ErrorResponse';
 
 const router = express.Router();
 
@@ -36,25 +37,38 @@ const router = express.Router();
  *                       id:
  *                         type: string
  */
-router.get('/debug', async (req: Request, res: Response) => {
+router.get('/debug', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const endpoints = await Endpoint.find().lean();
+    // Only allow access if request has valid projectId
+    const projectId = req.params.projectId;
+    if (!projectId || !Types.ObjectId.isValid(projectId)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: 'Debug access requires valid project ID'
+      });
+    }
+
+    // Only show endpoints for this project
+    const endpoints = await Endpoint.find({ projectId }).lean();
+    
+    // Filter out sensitive information
+    const filteredEndpoints = endpoints.map(ep => ({
+      id: ep._id,
+      path: ep.path,
+      method: ep.method,
+      projectId: ep.projectId.toString(),
+      createdAt: ep.createdAt,
+      updatedAt: ep.updatedAt
+    }));
+
     res.json({
-      endpointCount: endpoints.length,
-      endpoints: endpoints.map(ep => ({
-        path: ep.path,
-        method: ep.method,
-        projectId: ep.projectId.toString(),
-        id: ep._id.toString()
-      }))
+      endpointCount: filteredEndpoints.length,
+      endpoints: filteredEndpoints
     });
   } catch (error) {
     console.error('Error getting endpoints:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server Error',
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
-    });
+    next(error instanceof Error ? error : new Error(String(error)));
   }
 });
 
@@ -73,7 +87,7 @@ router.get('/debug', async (req: Request, res: Response) => {
  *         description: Project ID
  *     responses:
  *       200:
- *         description: List of endpoints for the project
+ *         description: List of endpoints
  *         content:
  *           application/json:
  *             schema:
@@ -92,6 +106,53 @@ router.get('/debug', async (req: Request, res: Response) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/projects/:projectId/endpoints', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const projectId = req.params.projectId;
+    if (!Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid project ID'
+      });
+    }
+
+    const endpoints = await Endpoint.find({ projectId });
+    res.status(200).json({
+      success: true,
+      data: endpoints.map(ep => ({
+        id: ep._id.toString(),
+        path: ep.path,
+        method: ep.method,
+        projectId: ep.projectId.toString(),
+        response: ep.response,
+        schemaDefinition: ep.schemaDefinition,
+        count: ep.count,
+        supportPagination: ep.supportPagination,
+        requireAuth: ep.requireAuth,
+        apiKeys: ep.apiKeys,
+        delay: ep.delay,
+        responseType: ep.responseType,
+        parameterPath: ep.parameterPath,
+        responseHttpStatus: ep.responseHttpStatus,
+        createdAt: ep.createdAt,
+        updatedAt: ep.updatedAt
+      }))
+    });
+  } catch (error) {
+    next(error instanceof Error ? error : new Error(String(error)));
+  }
+});
+
+/**
+ * @swagger
+ * /api/projects/{projectId}/endpoints:
  *   post:
  *     summary: Create a new endpoint for a project
  *     tags: [Endpoints]
@@ -111,21 +172,43 @@ router.get('/debug', async (req: Request, res: Response) => {
  *             required:
  *               - path
  *               - method
- *               - schemaDefinition
  *             properties:
  *               path:
  *                 type: string
- *                 description: Endpoint path (e.g., /users)
+ *                 description: Endpoint path
  *               method:
  *                 type: string
- *                 enum: [GET, POST, PUT, DELETE, PATCH]
- *                 description: HTTP method
+ *                 description: HTTP method (GET, POST, PUT, DELETE)
+ *               response:
+ *                 type: string
+ *                 description: Response data
  *               schemaDefinition:
  *                 type: object
- *                 description: Schema definition
+ *                 description: Schema definition for data generation
+ *               count:
+ *                 type: integer
+ *                 description: Number of items to generate
+ *               supportPagination:
+ *                 type: boolean
+ *                 description: Whether to support pagination
+ *               requireAuth:
+ *                 type: boolean
+ *                 description: Whether authentication is required
+ *               apiKeys:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: List of API keys
+ *               delay:
+ *                 type: integer
+ *                 description: Response delay in milliseconds
  *               responseType:
  *                 type: string
- *                 description: Response type
+ *                 enum: [list, single]
+ *                 description: Response type (list or single item)
+ *               parameterPath:
+ *                 type: string
+ *                 description: Path for pagination parameter
  *     responses:
  *       201:
  *         description: Endpoint created successfully
@@ -145,144 +228,62 @@ router.get('/debug', async (req: Request, res: Response) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Project not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
-router.get('/projects/:projectId/endpoints', async (req: Request, res: Response) => {
+router.post('/projects/:projectId/endpoints', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projectId = req.params.projectId;
     if (!Types.ObjectId.isValid(projectId)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid Project ID',
-        message: 'The provided project ID is not valid'
+        error: 'Invalid project ID'
       });
     }
 
-    const endpoints = await Endpoint.find({ projectId: new Types.ObjectId(projectId) }).lean();
-    console.log('Found endpoints:', endpoints);
-    res.json({
-      success: true,
-      data: endpoints.map(endpoint => ({
-        ...endpoint,
-        id: endpoint._id
-      }))
-    });
-  } catch (err: any) {
-    console.error('Error fetching endpoints:', err);
-    res.status(500).json({
-      success: false,
-      error: 'Server Error',
-      message: err instanceof Error ? err.message : 'Unknown error occurred'
-    });
-  }
-});
-
-router.post('/projects/:projectId/endpoints', async (req: Request, res: Response) => {
-  try {
-    const projectId = req.params.projectId;
-    if (!Types.ObjectId.isValid(projectId)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid Project ID',
-        message: 'The provided project ID is not valid'
-      });
-    }
-
-    console.log('Creating endpoint:', { projectId: req.params.projectId, body: req.body });
-    
     // Validate required fields
-    const { path, method, schemaDefinition, responseType } = req.body;
-    if (!path || !method || !schemaDefinition) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Missing required fields',
-        details: {
-          path: !path,
-          method: !method,
-          schemaDefinition: !schemaDefinition
-        }
-      });
+    const requiredFields = ['path', 'method'];
+    const missingFields = requiredFields.filter(field => !Object.prototype.hasOwnProperty.call(req.body, field));
+    
+    if (missingFields.length > 0) {
+      throw new ErrorResponse(`Missing required fields: ${missingFields.join(', ')}`, 400);
     }
 
-    // Format path and method
-    const formattedPath = path.startsWith('/') ? path : '/' + path;
-    const formattedMethod = method.toUpperCase();
-    const formattedResponseType = responseType || 'list';
+    // Validate path starts with /
+    const path = req.body.path.startsWith('/') ? req.body.path : '/' + req.body.path;
 
-    // Debug: List all endpoints in the project
-    console.log('Current endpoints in project:', await Endpoint.find({ projectId: new Types.ObjectId(projectId) }).lean());
-
-    // Debug: List all endpoints in the database
-    console.log('All endpoints in database:', await Endpoint.find({}).lean());
-
-    // Check for existing endpoint with same path, method, and project
-    const existingEndpoint = await Endpoint.findOne({
-      projectId: new Types.ObjectId(projectId),
-      path: formattedPath,
-      method: formattedMethod,
-      responseType: formattedResponseType
-    });
-
-    console.log('Existing endpoint check:', {
-      query: {
-        projectId: new Types.ObjectId(projectId),
-        path: formattedPath,
-        method: formattedMethod,
-        responseType: formattedResponseType
-      },
-      result: existingEndpoint
-    });
-
-    if (existingEndpoint) {
-      return res.status(400).json({
-        success: false,
-        error: 'Endpoint already exists',
-        details: `An endpoint with path '${formattedPath}', method '${formattedMethod}', and response type '${formattedResponseType}' already exists in this project`
-      });
-    }
-
-    // Create the endpoint with defaults
-    const endpoint = new Endpoint({
-      projectId: new Types.ObjectId(projectId),
-      path: formattedPath,
-      method: formattedMethod,
-      schemaDefinition: schemaDefinition || {},
+    // Create endpoint
+    const endpoint = await Endpoint.create({
+      path,
+      method: req.body.method,
+      projectId,
+      response: req.body.response || '{}',
+      schemaDefinition: req.body.schemaDefinition || '{}',
       count: req.body.count || 10,
       supportPagination: req.body.supportPagination || false,
       requireAuth: req.body.requireAuth || false,
       apiKeys: req.body.apiKeys || [],
       delay: req.body.delay || 0,
-      responseType: formattedResponseType,
-      parameterPath: req.body.parameterPath || ':id'
+      responseType: req.body.responseType || 'list',
+      parameterPath: req.body.parameterPath || 'page'
     });
 
-    console.log('About to save endpoint:', endpoint.toObject());
-
-    await endpoint.save();
-    console.log('Endpoint saved successfully');
-    console.log('Created endpoint:', {
-      ...endpoint.toObject(),
-      _id: endpoint._id.toString(),
-      projectId: endpoint.projectId.toString()
-    });
-    
     res.status(201).json({
       success: true,
-      data: {
-        ...endpoint.toObject(),
-        id: endpoint._id
-      }
+      data: endpoint
     });
-  } catch (err: any) {
-    console.error('Error creating endpoint:', err);
-    console.error('Error details:', err.stack);
-    if (err.code === 11000) {
-      console.error('Duplicate key error:', err.keyValue);
-    }
-    res.status(500).json({ 
-      success: false, 
-      error: 'Server Error',
-      message: err instanceof Error ? err.message : 'Unknown error occurred'
-    });
+  } catch (error) {
+    next(error instanceof Error ? error : new Error(String(error)));
   }
 });
 
@@ -318,52 +319,47 @@ router.post('/projects/:projectId/endpoints', async (req: Request, res: Response
  *                   example: true
  *                 data:
  *                   $ref: '#/components/schemas/Endpoint'
+ *       400:
+ *         description: Invalid ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Endpoint not found
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
-router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, res: Response) => {
+router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { projectId, endpointId } = req.params;
     
     if (!Types.ObjectId.isValid(projectId) || !Types.ObjectId.isValid(endpointId)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid ID',
-        message: 'The provided project ID or endpoint ID is not valid'
+        error: 'Invalid ID'
       });
     }
 
-    const endpoint = await Endpoint.findOne({
-      _id: new Types.ObjectId(endpointId),
-      projectId: new Types.ObjectId(projectId)
-    }).lean();
-
+    const endpoint = await Endpoint.findById(endpointId);
     if (!endpoint) {
-      return res.status(404).json({
-        success: false,
-        error: 'Not Found',
-        message: 'Endpoint not found'
-      });
+      throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
-      data: {
-        ...endpoint,
-        id: endpoint._id
-      }
+      data: endpoint
     });
   } catch (error) {
-    console.error('Error getting endpoint:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server Error',
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
-    });
+    next(error instanceof Error ? error : new Error(String(error)));
   }
 });
 
@@ -386,17 +382,46 @@ router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, re
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - path
+ *               - method
  *             properties:
  *               path:
  *                 type: string
  *                 description: Endpoint path
  *               method:
  *                 type: string
- *                 enum: [GET, POST, PUT, DELETE, PATCH]
- *                 description: HTTP method
+ *                 description: HTTP method (GET, POST, PUT, DELETE)
+ *               response:
+ *                 type: string
+ *                 description: Response data
  *               schemaDefinition:
  *                 type: object
- *                 description: Schema definition
+ *                 description: Schema definition for data generation
+ *               count:
+ *                 type: integer
+ *                 description: Number of items to generate
+ *               supportPagination:
+ *                 type: boolean
+ *                 description: Whether to support pagination
+ *               requireAuth:
+ *                 type: boolean
+ *                 description: Whether authentication is required
+ *               apiKeys:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: List of API keys
+ *               delay:
+ *                 type: integer
+ *                 description: Response delay in milliseconds
+ *               responseType:
+ *                 type: string
+ *                 enum: [list, single]
+ *                 description: Response type (list or single item)
+ *               parameterPath:
+ *                 type: string
+ *                 description: Path for pagination parameter
  *     responses:
  *       200:
  *         description: Endpoint updated successfully
@@ -410,12 +435,82 @@ router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, re
  *                   example: true
  *                 data:
  *                   $ref: '#/components/schemas/Endpoint'
+ *       400:
+ *         description: Invalid request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Endpoint not found
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const endpointId = req.params.endpointId;
+    console.log('Update request received:', {
+      endpointId,
+      body: req.body
+    });
+
+    // Validate required fields
+    const requiredFields = ['path', 'method'];
+    const missingFields = requiredFields.filter(field => !Object.prototype.hasOwnProperty.call(req.body, field));
+    
+    if (missingFields.length > 0) {
+      throw new ErrorResponse(`Missing required fields: ${missingFields.join(', ')}`, 400);
+    }
+
+    // Validate path starts with /
+    const path = req.body.path.startsWith('/') ? req.body.path : '/' + req.body.path;
+
+    // Update endpoint
+    const endpoint = await Endpoint.findByIdAndUpdate(
+      endpointId,
+      {
+        path,
+        method: req.body.method,
+        response: req.body.response,
+        schemaDefinition: req.body.schemaDefinition,
+        count: req.body.count,
+        supportPagination: req.body.supportPagination,
+        requireAuth: req.body.requireAuth,
+        apiKeys: req.body.apiKeys,
+        delay: req.body.delay,
+        responseType: req.body.responseType,
+        parameterPath: req.body.parameterPath
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!endpoint) {
+      throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: endpoint
+    });
+  } catch (error) {
+    next(error instanceof Error ? error : new Error(String(error)));
+  }
+});
+
+/**
+ * @swagger
+ * /api/endpoints/{endpointId}:
  *   delete:
  *     summary: Delete an endpoint
  *     tags: [Endpoints]
@@ -437,109 +532,57 @@ router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, re
  *                 success:
  *                   type: boolean
  *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       description: Deleted endpoint ID
+ *       400:
+ *         description: Invalid ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Endpoint not found
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
-router.put('/endpoints/:endpointId', async (req: Request, res: Response) => {
-  try {
-    const endpointId = req.params.endpointId;
-    console.log('Update request received:', {
-      endpointId,
-      body: req.body,
-      responseHttpStatus: req.body.responseHttpStatus
-    });
-
-    if (!Types.ObjectId.isValid(endpointId)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid Endpoint ID',
-        message: 'The provided endpoint ID is not valid'
-      });
-    }
-
-    const updateData = {
-      ...req.body,
-      path: req.body.path.startsWith('/') ? req.body.path : '/' + req.body.path
-    };
-    console.log('Update data:', updateData);
-
-    const updatedEndpoint = await Endpoint.findByIdAndUpdate(
-      endpointId,
-      updateData,
-      { 
-        new: true,
-        runValidators: true // Enable schema validation for update
-      }
-    ).lean() as IEndpoint;
-
-    console.log('Updated endpoint:', updatedEndpoint);
-
-    if (!updatedEndpoint) {
-      return res.status(404).json({
-        success: false,
-        error: 'Not Found',
-        message: 'Endpoint not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: {
-        ...updatedEndpoint,
-        id: updatedEndpoint._id
-      }
-    });
-  } catch (err: any) {
-    console.error('Error updating endpoint:', err);
-    console.error('Error details:', err.stack);
-    res.status(500).json({
-      success: false,
-      error: 'Server Error',
-      message: err instanceof Error ? err.message : 'Unknown error occurred'
-    });
-  }
-});
-
-router.delete('/endpoints/:endpointId', async (req: Request, res: Response) => {
+router.delete('/endpoints/:endpointId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const endpointId = req.params.endpointId;
     if (!Types.ObjectId.isValid(endpointId)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid Endpoint ID',
-        message: 'The provided endpoint ID is not valid'
+        error: 'Invalid endpoint ID'
       });
     }
 
-    const endpoint = await Endpoint.findByIdAndDelete(endpointId);
+    const endpoint = await Endpoint.findById(endpointId);
     if (!endpoint) {
-      return res.status(404).json({
-        success: false,
-        error: 'Not Found',
-        message: 'Endpoint not found'
-      });
+      throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
     }
 
-    res.json({
+    await endpoint.deleteOne();
+
+    res.status(200).json({
       success: true,
       data: {
-        ...endpoint.toObject(),
-        id: endpoint._id
+        id: endpointId
       }
     });
-  } catch (err: any) {
-    console.error('Error deleting endpoint:', err);
-    console.error('Error details:', err.stack);
-    res.status(500).json({
-      success: false,
-      error: 'Server Error',
-      message: err instanceof Error ? err.message : 'Unknown error occurred'
-    });
+  } catch (error) {
+    next(error instanceof Error ? error : new Error(String(error)));
   }
 });
 
-export default router;
+export const endpointRoutes = router;
