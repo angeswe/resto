@@ -34,6 +34,43 @@ const options: swaggerJsdoc.Options = {
               type: 'string',
               description: 'Project description',
             },
+            defaultSchema: {
+              type: 'object',
+              description: 'Default data generation schema',
+              example: {
+                id: "(random:uuid)",
+                name: "(random:name)",
+                email: "(random:email)",
+                createdAt: "(random:datetime)"
+              }
+            },
+            defaultCount: {
+              type: 'integer',
+              description: 'Default number of items to generate',
+              minimum: 1,
+              maximum: 10000,
+              default: 10
+            },
+            requireAuth: {
+              type: 'boolean',
+              description: 'Whether authentication is required for endpoints',
+              default: false
+            },
+            apiKeys: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'List of API keys authorized for this project',
+              default: []
+            },
+            endpoints: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/Endpoint'
+              },
+              description: 'List of endpoints associated with this project'
+            },
             createdAt: {
               type: 'string',
               format: 'date-time',
@@ -67,9 +104,46 @@ const options: swaggerJsdoc.Options = {
               enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
               description: 'HTTP method',
             },
-            response: {
+            schemaDefinition: {
               type: 'object',
-              description: 'Response configuration',
+              description: 'Schema definition for data generation',
+            },
+            count: {
+              type: 'integer',
+              description: 'Number of items to generate',
+              minimum: 1,
+              maximum: 10000,
+              default: 10
+            },
+            supportPagination: {
+              type: 'boolean',
+              description: 'Whether endpoint supports pagination',
+              default: false
+            },
+            requireAuth: {
+              type: 'boolean',
+              description: 'Whether authentication is required',
+              default: false
+            },
+            apiKeys: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'List of API keys authorized for this endpoint',
+              default: []
+            },
+            delay: {
+              type: 'integer',
+              description: 'Response delay in milliseconds',
+              minimum: 0,
+              maximum: 5000,
+              default: 0
+            },
+            responseType: {
+              type: 'string',
+              enum: ['list', 'single'],
+              description: 'Type of response (list or single item)',
             },
             createdAt: {
               type: 'string',
@@ -82,7 +156,7 @@ const options: swaggerJsdoc.Options = {
               description: 'Last update timestamp',
             },
           },
-          required: ['projectId', 'path', 'method', 'response'],
+          required: ['projectId', 'path', 'method', 'schemaDefinition', 'count', 'responseType'],
         },
         Error: {
           type: 'object',

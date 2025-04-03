@@ -45,7 +45,7 @@ export const formatDate = (date: string | Date, options: DateFormatOptions = {})
  * @param date - The date to format
  * @returns The relative time string
  */
-export const timeAgo = (date: string | Date): string => {
+export const timeAgoOld = (date: string | Date): string => {
   const dateObj = new Date(date);
   const now = new Date();
   const seconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000);
@@ -77,6 +77,38 @@ export const timeAgo = (date: string | Date): string => {
 
   return seconds <= 1 ? "just now" : `${Math.floor(seconds)} seconds ago`;
 };
+
+/**
+ * Format a date to a relative time string (e.g., "2 hours ago")
+ * @param date - The date to format
+ * @returns The relative time string
+ */
+export const timeAgo = (dateString: string) => {
+  if (!dateString) return 'Unknown date';
+
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid date';
+
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Invalid date';
+  }
+};
+
 
 /**
  * Truncate a string to a specified length and add ellipsis

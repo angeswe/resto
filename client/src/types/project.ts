@@ -8,6 +8,7 @@ export interface Project {
   apiKeys: string[];
   createdAt: string;
   updatedAt: string;
+  endpoints: Endpoint[];
 }
 
 export type EndpointMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';

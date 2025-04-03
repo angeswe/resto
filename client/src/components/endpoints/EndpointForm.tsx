@@ -348,7 +348,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
                 />
                 <Button
                   type="button"
-                  onClick={() => handleRemoveApiKey(index)}
+                  onPress={() => handleRemoveApiKey(index)}
                   variant="flat"
                   color="danger"
                 >
@@ -358,7 +358,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
             ))}
             <Button
               type="button"
-              onClick={handleAddApiKey}
+              onPress={handleAddApiKey}
               variant="flat"
             >
               Add Key
@@ -371,7 +371,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
         <Button
           type="button"
           variant="flat"
-          onClick={onCancel}
+          onPress={onCancel}
         >
           Cancel
         </Button>

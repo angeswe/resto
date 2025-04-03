@@ -14,6 +14,7 @@ const formatProject = (project: any) => {
     defaultCount: project.defaultCount,
     requireAuth: project.requireAuth,
     apiKeys: project.apiKeys,
+    endpoints: project.endpoints || [],
     createdAt: project.createdAt,
     updatedAt: project.updatedAt
   };

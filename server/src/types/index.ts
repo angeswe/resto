@@ -3,7 +3,7 @@ import { Document } from 'mongoose';
 export interface IProject extends Document {
   name: string;
   description: string;
-  endpoints: string[];
+  endpoints: IEndpoint[];
   createdAt: Date;
   updatedAt: Date;
 }
