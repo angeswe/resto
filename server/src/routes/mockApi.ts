@@ -278,7 +278,7 @@ router.get('/debug', async (req: Request, res: Response) => {
 
     // Only show endpoints for this project
     const endpoints = await Endpoint.find({ projectId: req.projectId }).lean();
-    
+
     // Filter out sensitive information
     const filteredEndpoints = endpoints.map(ep => ({
       id: ep._id,
@@ -400,9 +400,14 @@ router.all('*', async (req: Request, res: Response) => {
       await new Promise(resolve => setTimeout(resolve, matchedEndpoint.delay));
     }
 
+    // Parse schema definition (handle stringified JSON)
+    const schema = typeof matchedEndpoint.schemaDefinition === 'string'
+      ? JSON.parse(matchedEndpoint.schemaDefinition)
+      : matchedEndpoint.schemaDefinition;
+
     // Validate schema before generating data
-    console.log('Schema to validate:', JSON.stringify(matchedEndpoint.schemaDefinition, null, 2));
-    if (!isValidSchema(matchedEndpoint.schemaDefinition)) {
+    console.log('Schema to validate:', JSON.stringify(schema, null, 2));
+    if (!isValidSchema(schema)) {
       console.error('Invalid schema detected');
       return res.status(500).json({
         error: 'Internal Server Error',
@@ -436,7 +441,7 @@ router.all('*', async (req: Request, res: Response) => {
         });
 
         responseData = {
-          data: DataGenerator.generate(matchedEndpoint.schemaDefinition, itemsToGenerate),
+          data: DataGenerator.generate(schema, itemsToGenerate),
           pagination: {
             page,
             limit,
@@ -446,18 +451,19 @@ router.all('*', async (req: Request, res: Response) => {
         };
       } else {
         console.log('Generating list data with count:', count);
-        responseData = DataGenerator.generate(matchedEndpoint.schemaDefinition, count);
+        responseData = {
+          data: DataGenerator.generate(schema, count)
+        };
       }
     } else {
       // For all other cases (single GET, POST, PUT, DELETE)
       console.log('Generating single response data');
-      responseData = DataGenerator.generate(matchedEndpoint.schemaDefinition, 1);
-      if (Array.isArray(responseData)) {
-        responseData = responseData[0];
-      }
+      responseData = {
+        data: DataGenerator.generate(schema, 1)[0]
+      };
       // Add path parameters to the response if they exist
       if (Object.keys(pathParams).length > 0) {
-        responseData = { ...responseData, ...pathParams };
+        responseData.data = { ...responseData.data, ...pathParams };
       }
     }
 
@@ -473,7 +479,7 @@ router.all('*', async (req: Request, res: Response) => {
       console.error('Error parsing status code:', e);
       statusCode = 500;
     }
-    
+
     // Validate status code
     const validStatusCodes = METHOD_STATUS_CODES[method].map(s => parseInt(s.code));
     if (!validStatusCodes.includes(statusCode)) {
@@ -514,12 +520,12 @@ function isValidSchema(schema: Schema | Schema[]): boolean {
     // For each property in the schema, validate its value
     for (const [key, value] of Object.entries(schema)) {
       console.log(`Validating schema property "${key}" with value:`, value);
-      
+
       if (value === null) {
         console.log('Value is null - continuing');
         continue;
       }
-      
+
       // Handle nested objects
       if (typeof value === 'object' && !Array.isArray(value)) {
         console.log('Validating nested object');
@@ -529,7 +535,7 @@ function isValidSchema(schema: Schema | Schema[]): boolean {
         }
         continue;
       }
-      
+
       // Handle arrays of schemas
       if (Array.isArray(value)) {
         console.log('Validating array value');

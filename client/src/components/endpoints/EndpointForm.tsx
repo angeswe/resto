@@ -1,22 +1,29 @@
 import { useEffect, useState } from 'react';
-import CodeMirror from '@uiw/react-codemirror';
-import { json } from '@codemirror/lang-json';
+import SchemaEditor from '../projects/SchemaEditor';
 import { toast } from 'react-toastify';
-import { Endpoint, EndpointData, EndpointMethod, ResponseType } from '../../types/project';
+import { Endpoint, EndpointData, EndpointMethod } from '../../types/project';
 import { useAppContext } from '../../contexts/AppContext';
-import { dracula } from '@uiw/codemirror-theme-dracula';
-import { githubLight } from '@uiw/codemirror-theme-github';
 import { METHOD_STATUS_CODES } from '../../types/http';
 import { Button, Input, Switch } from '@heroui/react';
 
+interface HttpStatusCode {
+  code: string;
+  text: string;
+  category: string;
+}
+
+interface StatusByCategory {
+  [key: string]: HttpStatusCode[];
+}
+
 interface EndpointFormProps {
   projectId: string;
-  onSubmit: (endpoint: EndpointData) => void;
+  onSubmit: (data: EndpointData) => Promise<void>;
   onCancel: () => void;
   initialData?: Endpoint | EndpointData;
 }
 
-interface FormData {
+interface EndpointFormData {
   path: string;
   method: EndpointMethod;
   schemaDefinition: string;
@@ -25,49 +32,35 @@ interface FormData {
   requireAuth: boolean;
   apiKeys: string[];
   delay: number;
-  responseType: ResponseType;
+  responseType: 'object' | 'list';
   parameterPath: string;
   responseHttpStatus: string;
 }
 
-interface HttpStatus {
-  code: number;
-  text: string;
-  category: string;
-}
-
-interface StatusByCategory {
-  [key: string]: HttpStatus[];
-}
-
-interface HttpStatusCode {
-  code: string;
-  text: string;
-  category: string;
-}
-
 const defaultSchema = {
   id: "(random:uuid)",
-  name: "(random:string)",
-  createdAt: "(random:datetime)",
-  email: "(random:email)"
+  name: "(random:name)",
+  email: "(random:email)",
+  createdAt: "(random:datetime)"
 };
 
 const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCancel, initialData }) => {
   console.log('Project ID:', projectId);
   const { theme } = useAppContext();
-  const [formData, setFormData] = useState<FormData>({
-    path: (initialData as Endpoint)?.path || (initialData as EndpointData)?.path || '',
-    method: (initialData as Endpoint)?.method || (initialData as EndpointData)?.method || 'GET',
-    schemaDefinition: (initialData as Endpoint)?.schemaDefinition ? JSON.stringify((initialData as Endpoint).schemaDefinition, null, 2) : (initialData as EndpointData)?.schemaDefinition ? JSON.stringify((initialData as EndpointData).schemaDefinition, null, 2) : JSON.stringify(defaultSchema, null, 2),
-    count: (initialData as Endpoint)?.count || (initialData as EndpointData)?.count || 10,
-    supportPagination: (initialData as Endpoint)?.supportPagination || (initialData as EndpointData)?.supportPagination || false,
-    requireAuth: (initialData as Endpoint)?.requireAuth || (initialData as EndpointData)?.requireAuth || false,
-    apiKeys: (initialData as Endpoint)?.apiKeys || (initialData as EndpointData)?.apiKeys || [],
-    delay: (initialData as Endpoint)?.delay || (initialData as EndpointData)?.delay || 0,
-    responseType: (initialData as Endpoint)?.responseType || (initialData as EndpointData)?.responseType || 'list',
-    parameterPath: (initialData as Endpoint)?.parameterPath || (initialData as EndpointData)?.parameterPath || ':id',
-    responseHttpStatus: (initialData as Endpoint)?.responseHttpStatus || (initialData as EndpointData)?.responseHttpStatus || '200'
+  const [formData, setFormData] = useState<EndpointFormData>({
+    path: initialData?.path || '',
+    method: initialData?.method || 'GET',
+    schemaDefinition: typeof initialData?.schemaDefinition === 'string'
+      ? initialData.schemaDefinition
+      : JSON.stringify(initialData?.schemaDefinition || defaultSchema, null, 2),
+    count: initialData?.count || 10,
+    supportPagination: initialData?.supportPagination || false,
+    requireAuth: initialData?.requireAuth || false,
+    apiKeys: initialData?.apiKeys || [],
+    delay: initialData?.delay || 0,
+    responseType: initialData?.responseType === 'list' ? 'list' : 'object',
+    parameterPath: initialData?.parameterPath || '',
+    responseHttpStatus: initialData?.responseHttpStatus || '200'
   });
 
   const [isValidJson, setIsValidJson] = useState(true);
@@ -76,17 +69,19 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
   useEffect(() => {
     if (initialData) {
       setFormData({
-        path: (initialData as Endpoint)?.path || (initialData as EndpointData)?.path,
-        method: (initialData as Endpoint)?.method || (initialData as EndpointData)?.method,
-        schemaDefinition: (initialData as Endpoint)?.schemaDefinition ? JSON.stringify((initialData as Endpoint).schemaDefinition, null, 2) : (initialData as EndpointData)?.schemaDefinition ? JSON.stringify((initialData as EndpointData).schemaDefinition, null, 2) : JSON.stringify(defaultSchema, null, 2),
-        count: (initialData as Endpoint)?.count || (initialData as EndpointData)?.count || 10,
-        supportPagination: (initialData as Endpoint)?.supportPagination || (initialData as EndpointData)?.supportPagination || false,
-        requireAuth: (initialData as Endpoint)?.requireAuth || (initialData as EndpointData)?.requireAuth || false,
-        apiKeys: (initialData as Endpoint)?.apiKeys || (initialData as EndpointData)?.apiKeys || [],
-        delay: (initialData as Endpoint)?.delay || (initialData as EndpointData)?.delay || 0,
-        responseType: (initialData as Endpoint)?.responseType || (initialData as EndpointData)?.responseType || 'list',
-        parameterPath: (initialData as Endpoint)?.parameterPath || (initialData as EndpointData)?.parameterPath || ':id',
-        responseHttpStatus: (initialData as Endpoint)?.responseHttpStatus || (initialData as EndpointData)?.responseHttpStatus || '200'
+        path: initialData.path || '',
+        method: initialData.method || 'GET',
+        schemaDefinition: typeof initialData.schemaDefinition === 'string'
+          ? initialData.schemaDefinition
+          : JSON.stringify(initialData.schemaDefinition || defaultSchema, null, 2),
+        count: initialData.count || 10,
+        supportPagination: initialData.supportPagination || false,
+        requireAuth: initialData.requireAuth || false,
+        apiKeys: initialData.apiKeys || [],
+        delay: initialData.delay || 0,
+        responseType: initialData.responseType === 'list' ? 'list' : 'object',
+        parameterPath: initialData.parameterPath || '',
+        responseHttpStatus: initialData.responseHttpStatus || '200'
       });
     }
   }, [initialData]);
@@ -103,10 +98,14 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
     }
   };
 
-  const handleJsonChange = (value: string) => {
-    setFormData(prev => ({ ...prev, schemaDefinition: value }));
+  const handleSchemaChange = (value: string) => {
     try {
+      // Validate that the value is valid JSON
       JSON.parse(value);
+      setFormData(prev => ({
+        ...prev,
+        schemaDefinition: value
+      }));
       setIsValidJson(true);
     } catch (e) {
       setIsValidJson(false);
@@ -143,10 +142,11 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
 
     setIsSubmitting(true);
     try {
-      const parsedSchema = JSON.parse(formData.schemaDefinition);
+      // Always convert schema to string before submitting
       const endpointData: EndpointData = {
         ...formData,
-        schemaDefinition: parsedSchema
+        schemaDefinition: formData.schemaDefinition,
+        responseType: formData.responseType === 'list' ? 'list' : 'object'
       };
       await onSubmit(endpointData);
     } catch (error) {
@@ -156,6 +156,12 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
       setIsSubmitting(false);
     }
   };
+
+  const statusCodes = (METHOD_STATUS_CODES[formData.method] as HttpStatusCode[]).reduce((acc: StatusByCategory, status: HttpStatusCode) => {
+    if (!acc[status.category]) acc[status.category] = [];
+    acc[status.category].push(status);
+    return acc;
+  }, {});
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -202,7 +208,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
             className="w-full px-3 py-2 rounded-md border focus:ring-2 focus:ring-indigo-500"
           >
             <option value="list">List (Index)</option>
-            <option value="single">Single Item</option>
+            <option value="object">Single Item</option>
           </select>
         </div>
       )}
@@ -218,16 +224,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
           onChange={(e) => setFormData({ ...formData, responseHttpStatus: e.target.value })}
           className="w-full px-3 py-2 rounded-md border focus:ring-2 focus:ring-indigo-500"
         >
-          {Object.entries(
-            (METHOD_STATUS_CODES[formData.method] as HttpStatusCode[]).reduce((acc: StatusByCategory, status: HttpStatusCode) => {
-              if (!acc[status.category]) acc[status.category] = [];
-              acc[status.category].push({
-                ...status,
-                code: parseInt(status.code, 10)
-              });
-              return acc;
-            }, {})
-          ).map(([category, codes]) => (
+          {Object.entries(statusCodes).map(([category, codes]) => (
             <optgroup key={category} label={category.replace(/([A-Z])/g, ' $1').toLowerCase()}>
               {codes.map(status => (
                 <option key={status.code} value={String(status.code)}>
@@ -239,7 +236,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
         </select>
       </div>
 
-      {formData.method === 'GET' && formData.responseType === 'single' && (
+      {formData.method === 'GET' && formData.responseType === 'object' && (
         <div className="space-y-2">
           <label htmlFor="parameterPath" className="block text-sm font-medium">
             Parameter Path
@@ -305,22 +302,13 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="schema" className="block text-sm font-medium">
-          Schema Definition
-        </label>
-        <div className={`border rounded-md ${!isValidJson ? 'border-red-500' : ''}`}>
-          <CodeMirror
-            value={formData.schemaDefinition}
-            height="200px"
-            extensions={[json()]}
-            onChange={handleJsonChange}
-            theme={theme === 'dark' ? dracula : githubLight}
-            className="rounded-md"
-          />
-        </div>
-        {!isValidJson && (
-          <p className="text-red-500 text-sm">Invalid JSON format</p>
-        )}
+        <h3 className="text-lg font-medium">Schema Definition</h3>
+        <SchemaEditor
+          value={formData.schemaDefinition}
+          onChange={handleSchemaChange}
+          isValid={isValidJson}
+          theme={theme}
+        />
       </div>
 
       <div className="space-y-4">

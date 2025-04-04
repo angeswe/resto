@@ -12,12 +12,12 @@ export interface Project {
 }
 
 export type EndpointMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-export type ResponseType = 'list' | 'single';
+export type ResponseType = 'object' | 'list' | 'single';
 
 export interface ProjectData {
   name: string;
   description: string;
-  defaultSchema?: string;
+  defaultSchema?: object;
   defaultCount?: number;
   requireAuth?: boolean;
   apiKeys?: string[];
@@ -26,7 +26,7 @@ export interface ProjectData {
 export interface EndpointData {
   path: string;
   method: EndpointMethod;
-  schemaDefinition: string;
+  schemaDefinition: string | Record<string, any>;
   count: number;
   supportPagination: boolean;
   requireAuth: boolean;

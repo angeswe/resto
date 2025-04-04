@@ -24,7 +24,14 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
     try {
       setLoading(true);
       const data = await endpointsApi.getEndpoints(projectId);
-      setEndpoints(data);
+      // Parse schemaDefinition for each endpoint
+      const parsedEndpoints = data.map(endpoint => ({
+        ...endpoint,
+        schemaDefinition: typeof endpoint.schemaDefinition === 'string' 
+          ? JSON.parse(endpoint.schemaDefinition)
+          : endpoint.schemaDefinition
+      }));
+      setEndpoints(parsedEndpoints);
     } catch (error) {
       console.error('Failed to fetch endpoints:', error);
       toast.error('Failed to fetch endpoints');
@@ -41,7 +48,12 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
     const fetchProject = async () => {
       try {
         const data = await projectsApi.getProject(projectId);
-        setProject(data);
+        setProject({
+          ...data,
+          defaultSchema: typeof data.defaultSchema === 'string'
+            ? JSON.parse(data.defaultSchema)
+            : data.defaultSchema
+        });
       } catch (error) {
         console.error('Failed to fetch project:', error);
       }

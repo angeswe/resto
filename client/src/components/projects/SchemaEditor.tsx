@@ -5,7 +5,7 @@ import { dracula } from '@uiw/codemirror-theme-dracula';
 import { githubLight } from '@uiw/codemirror-theme-github';
 
 interface SchemaEditorProps {
-  value: string;
+  value: string | Record<string, any>;
   onChange: (value: string) => void;
   isValid: boolean;
   theme: 'light' | 'dark';
@@ -17,12 +17,17 @@ const SchemaEditor: React.FC<SchemaEditorProps> = ({
   isValid,
   theme,
 }) => {
+  // Ensure value is always a string
+  const stringValue = typeof value === 'string' 
+    ? value 
+    : JSON.stringify(value, null, 2);
+
   return (
     <div className="space-y-2">
       <h3 className="text-lg font-medium">Default Schema</h3>
       <div className={`border rounded-md ${!isValid ? 'border-red-500' : ''}`}>
         <CodeMirror
-          value={value}
+          value={stringValue}
           height="200px"
           extensions={[json()]}
           onChange={onChange}

@@ -7,7 +7,12 @@ import { useAppContext } from "../../contexts/AppContext";
 import { ProjectData } from "../../types/project";
 import { toast } from 'react-toastify';
 
-const defaultJsonSchema = {}; // assuming this is defined somewhere
+const defaultJsonSchema = {
+  id: "(random:uuid)",
+  name: "(random:name)",
+  email: "(random:email)",
+  createdAt: "(random:datetime)"
+};
 
 const NewProject: React.FC = () => {
   const navigate = useNavigate();

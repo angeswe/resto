@@ -13,7 +13,7 @@ interface Project {
   id: string;
   name: string;
   description: string;
-  defaultSchema: object;
+  defaultSchema: string | Record<string, any>;
   defaultCount: number;
   requireAuth: boolean;
   apiKeys: string[];
