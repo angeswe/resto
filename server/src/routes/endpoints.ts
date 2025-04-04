@@ -560,25 +560,45 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
       }
     }
 
-    // Validate parameter path if provided
-    const parameterPath = updateData.parameterPath as string | undefined;
-    if (parameterPath !== undefined) {
-      const paramPathRegex = /^[a-zA-Z0-9\-_\/]*$/;
-      if (!paramPathRegex.test(parameterPath)) {
-        throw new ErrorResponse('Invalid parameter path format. Must contain only alphanumeric characters, hyphens, underscores, and forward slashes', 400);
-      }
-    }
-
     // Find endpoint first to validate it exists and belongs to the correct project
     const existingEndpoint = await Endpoint.findById(endpointId);
     if (!existingEndpoint) {
       throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
     }
 
+    // Validate all fields against schema
+    const schemaFields = Object.keys(Endpoint.schema.paths);
+    const allowedFields = new Set(schemaFields);
+    
+    // Remove any fields that aren't in the schema
+    const sanitizedData: Record<string, unknown> = {};
+    Object.entries(updateData).forEach(([key, value]) => {
+      if (allowedFields.has(key)) {
+        sanitizedData[key] = value;
+      }
+    });
+
+    // Ensure _id and __v cannot be modified
+    delete sanitizedData._id;
+    delete sanitizedData.__v;
+
+    // Validate parameter path if provided
+    const parameterPath = sanitizedData.parameterPath;
+    console.log('Parameter path:', parameterPath);
+    console.log('Parameter path type:', typeof parameterPath);
+    if (parameterPath !== undefined && parameterPath !== null && parameterPath !== '') {
+      const paramPathRegex = /^[a-zA-Z0-9\-_\/:]*$/;
+      console.log('Testing regex on:', parameterPath);
+      console.log('Regex test result:', paramPathRegex.test(parameterPath as string));
+      if (!paramPathRegex.test(parameterPath as string)) {
+        throw new ErrorResponse('Invalid parameter path format. Must contain only alphanumeric characters, hyphens, underscores, forward slashes, and colons', 400);
+      }
+    }
+
     // Update endpoint with validated and sanitized data
-    const endpoint = await Endpoint.findByIdAndUpdate(
-      endpointId,
-      updateData,
+    const endpoint = await Endpoint.findOneAndUpdate(
+      { _id: endpointId },
+      { $set: sanitizedData },
       {
         new: true,
         runValidators: true

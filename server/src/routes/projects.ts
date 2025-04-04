@@ -458,10 +458,26 @@ router.route('/:id')
         throw new ErrorResponse(`Project not found with id of ${projectId}`, 404);
       }
 
+      // Validate all fields against schema
+      const schemaFields = Object.keys(Project.schema.paths);
+      const allowedFields = new Set(schemaFields);
+      
+      // Create sanitized data object with only allowed fields
+      const sanitizedData: Record<string, unknown> = {};
+      Object.entries(updateData).forEach(([key, value]) => {
+        if (allowedFields.has(key)) {
+          sanitizedData[key] = value;
+        }
+      });
+
+      // Ensure _id and __v cannot be modified
+      delete sanitizedData._id;
+      delete sanitizedData.__v;
+
       // Update project with validated and sanitized data
-      const project = await Project.findByIdAndUpdate(
-        projectId,
-        updateData,
+      const project = await Project.findOneAndUpdate(
+        { _id: projectId },
+        { $set: sanitizedData },
         {
           new: true,
           runValidators: true
