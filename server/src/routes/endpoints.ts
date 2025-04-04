@@ -468,63 +468,70 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
     }
 
     // Validate and sanitize input
-    const updateData = {
-      path: req.body.path.startsWith('/') ? req.body.path : '/' + req.body.path,
-      method: req.body.method,
-      response: req.body.response,
-      schemaDefinition: req.body.schemaDefinition,
-      count: req.body.count,
-      supportPagination: req.body.supportPagination,
-      requireAuth: req.body.requireAuth,
-      apiKeys: req.body.apiKeys,
-      delay: req.body.delay,
-      responseType: req.body.responseType,
-      parameterPath: req.body.parameterPath
+    const updateData: Partial<typeof Endpoint.schema.obj> = {
+      path: typeof req.body.path === 'string' 
+        ? (req.body.path.startsWith('/') ? req.body.path : '/' + req.body.path).trim()
+        : undefined,
+      method: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].includes(req.body.method?.toUpperCase())
+        ? req.body.method.toUpperCase()
+        : undefined,
+      response: typeof req.body.response === 'object' && req.body.response !== null
+        ? req.body.response
+        : undefined,
+      schemaDefinition: typeof req.body.schemaDefinition === 'object' && req.body.schemaDefinition !== null
+        ? req.body.schemaDefinition
+        : undefined,
+      count: typeof req.body.count === 'number' && req.body.count >= 0
+        ? Math.floor(req.body.count)
+        : undefined,
+      supportPagination: typeof req.body.supportPagination === 'boolean'
+        ? Boolean(req.body.supportPagination)
+        : undefined,
+      requireAuth: typeof req.body.requireAuth === 'boolean'
+        ? Boolean(req.body.requireAuth)
+        : undefined,
+      apiKeys: Array.isArray(req.body.apiKeys)
+        ? req.body.apiKeys.filter(key => typeof key === 'string').map(key => key.trim())
+        : undefined,
+      delay: typeof req.body.delay === 'number' && req.body.delay >= 0
+        ? Math.min(Math.floor(req.body.delay), 10000) // Cap delay at 10 seconds
+        : undefined,
+      responseType: ['list', 'single'].includes(req.body.responseType)
+        ? req.body.responseType as 'list' | 'single'
+        : undefined,
+      parameterPath: typeof req.body.parameterPath === 'string'
+        ? req.body.parameterPath.trim()
+        : undefined
     };
+
+    // Remove undefined values
+    Object.keys(updateData).forEach((key: string) => 
+      updateData[key as keyof typeof updateData] === undefined && delete updateData[key as keyof typeof updateData]
+    );
+
+    // Validate required fields after sanitization
+    if (!updateData.path || !updateData.method) {
+      throw new ErrorResponse('Invalid or missing required fields: path and method', 400);
+    }
 
     // Validate schema definition if provided
     if (updateData.schemaDefinition !== undefined) {
-      // Validate that the schema is an object
-      if (typeof updateData.schemaDefinition !== 'object' || updateData.schemaDefinition === null) {
-        throw new ErrorResponse('schemaDefinition must be a valid JSON object', 400);
+      try {
+        // Convert to string for storage
+        updateData.schemaDefinition = JSON.stringify(updateData.schemaDefinition);
+      } catch (error) {
+        throw new ErrorResponse('Invalid schema definition format', 400);
       }
-
-      // Convert to string for storage
-      updateData.schemaDefinition = JSON.stringify(updateData.schemaDefinition);
     }
 
     // Validate response if provided
     if (updateData.response !== undefined) {
-      // Validate that the response is an object
-      if (typeof updateData.response !== 'object' || updateData.response === null) {
-        throw new ErrorResponse('response must be a valid JSON object', 400);
+      try {
+        // Ensure response can be properly serialized
+        JSON.stringify(updateData.response);
+      } catch (error) {
+        throw new ErrorResponse('Invalid response format', 400);
       }
-
-      // Convert to string for storage
-      updateData.response = JSON.stringify(updateData.response);
-    }
-
-    // Validate numeric fields
-    if (updateData.count !== undefined) {
-      if (typeof updateData.count !== 'number' || updateData.count <= 0) {
-        throw new ErrorResponse('count must be a positive number', 400);
-      }
-    }
-
-    if (updateData.delay !== undefined) {
-      if (typeof updateData.delay !== 'number' || updateData.delay < 0) {
-        throw new ErrorResponse('delay must be a non-negative number', 400);
-      }
-    }
-
-    // Validate apiKeys if provided
-    if (updateData.apiKeys !== undefined) {
-      if (!Array.isArray(updateData.apiKeys)) {
-        throw new ErrorResponse('apiKeys must be an array', 400);
-      }
-      updateData.apiKeys = updateData.apiKeys
-        .filter((key: any) => typeof key === 'string')
-        .map((key: string) => key.trim());
     }
 
     // Update endpoint

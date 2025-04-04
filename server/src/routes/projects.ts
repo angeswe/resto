@@ -368,14 +368,6 @@ router.route('/:id')
   })
   .put(async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Validate required fields
-      const requiredFields = ['name'];
-      const missingFields = requiredFields.filter(field => !Object.prototype.hasOwnProperty.call(req.body, field));
-
-      if (missingFields.length > 0) {
-        throw new ErrorResponse(`Missing required fields: ${missingFields.join(', ')}`, 400);
-      }
-
       // Validate project ID
       const projectId = req.params.id;
       if (!Types.ObjectId.isValid(projectId)) {
@@ -383,45 +375,47 @@ router.route('/:id')
       }
 
       // Validate and sanitize input
-      const updateData = {
-        name: req.body.name?.trim(),
-        description: req.body.description?.trim(),
-        defaultSchema: req.body.defaultSchema,
-        defaultCount: req.body.defaultCount,
-        requireAuth: req.body.requireAuth,
-        apiKeys: req.body.apiKeys
+      const updateData: Partial<typeof Project.schema.obj> = {
+        name: typeof req.body.name === 'string' 
+          ? req.body.name.trim()
+          : undefined,
+        description: typeof req.body.description === 'string'
+          ? req.body.description.trim()
+          : undefined,
+        defaultSchema: typeof req.body.defaultSchema === 'object' && req.body.defaultSchema !== null
+          ? req.body.defaultSchema
+          : undefined,
+        defaultCount: typeof req.body.defaultCount === 'number' && req.body.defaultCount >= 1 && req.body.defaultCount <= 10000
+          ? Math.floor(req.body.defaultCount)
+          : undefined,
+        requireAuth: typeof req.body.requireAuth === 'boolean'
+          ? Boolean(req.body.requireAuth)
+          : undefined,
+        apiKeys: Array.isArray(req.body.apiKeys)
+          ? req.body.apiKeys.filter(key => typeof key === 'string').map(key => key.trim())
+          : undefined
       };
 
-      // Validate schema definition if provided
-      if (updateData.defaultSchema) {
+      // Remove undefined values
+      for (const [key, value] of Object.entries(updateData)) {
+        if (value === undefined) {
+          delete updateData[key as keyof typeof updateData];
+        }
+      }
+
+      // Validate required fields after sanitization
+      if (!updateData.name) {
+        throw new ErrorResponse('Invalid or missing required field: name', 400);
+      }
+
+      // Validate schema if provided
+      if (updateData.defaultSchema !== undefined) {
         try {
-          // If it's already an object, convert to string and back to validate
-          const schema = typeof updateData.defaultSchema === 'string' 
-            ? JSON.parse(updateData.defaultSchema)
-            : updateData.defaultSchema;
-          
-          // Convert back to string for storage
-          updateData.defaultSchema = JSON.stringify(schema);
-        } catch (e) {
-          throw new ErrorResponse('Invalid JSON in defaultSchema', 400);
+          // Ensure schema can be properly serialized
+          JSON.stringify(updateData.defaultSchema);
+        } catch (error) {
+          throw new ErrorResponse('Invalid schema format', 400);
         }
-      }
-
-      // Validate defaultCount if provided
-      if (updateData.defaultCount !== undefined) {
-        if (typeof updateData.defaultCount !== 'number' || updateData.defaultCount <= 0) {
-          throw new ErrorResponse('defaultCount must be a positive number', 400);
-        }
-      }
-
-      // Validate apiKeys if provided
-      if (updateData.apiKeys) {
-        if (!Array.isArray(updateData.apiKeys)) {
-          throw new ErrorResponse('apiKeys must be an array', 400);
-        }
-        updateData.apiKeys = updateData.apiKeys
-          .filter((key: any) => typeof key === 'string')
-          .map((key: string) => key.trim());
       }
 
       const project = await Project.findByIdAndUpdate(
@@ -431,7 +425,7 @@ router.route('/:id')
           new: true,
           runValidators: true
         }
-      );
+      ).populate('endpoints');
 
       if (!project) {
         throw new ErrorResponse(`Project not found with id of ${projectId}`, 404);
