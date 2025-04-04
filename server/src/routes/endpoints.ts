@@ -30,12 +30,6 @@ const router = express.Router();
  *                     properties:
  *                       path:
  *                         type: string
- *                       method:
- *                         type: string
- *                       projectId:
- *                         type: string
- *                       id:
- *                         type: string
  */
 router.get('/debug', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -455,8 +449,11 @@ router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, re
 router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const endpointId = req.params.endpointId;
-    if (!Types.ObjectId.isValid(endpointId)) {
-      throw new ErrorResponse('Invalid endpoint ID format', 400);
+    if (!endpointId || !Types.ObjectId.isValid(endpointId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid endpoint ID'
+      });
     }
 
     // Validate required fields
@@ -539,8 +536,8 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
     delete sanitizedData.__v;
 
     // Update endpoint with validated and sanitized data
-    const endpoint = await Endpoint.findOneAndUpdate(
-      { _id: endpointId },
+    const endpoint = await Endpoint.findByIdAndUpdate(
+      endpointId,
       { $set: sanitizedData },
       {
         new: true,
@@ -613,7 +610,7 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
 router.delete('/endpoints/:endpointId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const endpointId = req.params.endpointId;
-    if (!Types.ObjectId.isValid(endpointId)) {
+    if (!endpointId || !Types.ObjectId.isValid(endpointId)) {
       return res.status(400).json({
         success: false,
         error: 'Invalid endpoint ID'
