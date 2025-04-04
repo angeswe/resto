@@ -295,7 +295,7 @@ const EndpointDocs: React.FC<EndpointDocsProps> = ({ endpoint, projectId }) => {
             projectId={projectId}
             method={endpoint.method}
             path={endpoint.path}
-            schemaDefinition={typeof endpoint.schemaDefinition === 'string' ? endpoint.schemaDefinition : JSON.stringify(endpoint.schemaDefinition, null, 2)}
+            schemaDefinition={parsedSchema}
             requireAuth={endpoint.requireAuth}
             apiKeys={endpoint.apiKeys}
           />

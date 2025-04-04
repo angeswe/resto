@@ -478,8 +478,10 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
       response: typeof req.body.response === 'object' && req.body.response !== null
         ? req.body.response
         : undefined,
-      schemaDefinition: typeof req.body.schemaDefinition === 'object' && req.body.schemaDefinition !== null
-        ? req.body.schemaDefinition
+      schemaDefinition: req.body.schemaDefinition !== undefined
+        ? typeof req.body.schemaDefinition === 'string'
+          ? req.body.schemaDefinition // Keep string as is
+          : JSON.stringify(req.body.schemaDefinition) // Convert object to string
         : undefined,
       count: typeof req.body.count === 'number' && req.body.count >= 0
         ? Math.floor(req.body.count)
@@ -491,7 +493,7 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
         ? Boolean(req.body.requireAuth)
         : undefined,
       apiKeys: Array.isArray(req.body.apiKeys)
-        ? req.body.apiKeys.filter(key => typeof key === 'string').map(key => key.trim())
+        ? req.body.apiKeys.filter((key: unknown): key is string => typeof key === 'string').map((key: string) => key.trim())
         : undefined,
       delay: typeof req.body.delay === 'number' && req.body.delay >= 0
         ? Math.min(Math.floor(req.body.delay), 10000) // Cap delay at 10 seconds
@@ -505,9 +507,11 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
     };
 
     // Remove undefined values
-    Object.keys(updateData).forEach((key: string) => 
-      updateData[key as keyof typeof updateData] === undefined && delete updateData[key as keyof typeof updateData]
-    );
+    for (const key of Object.keys(updateData) as Array<keyof typeof updateData>) {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    }
 
     // Validate required fields after sanitization
     if (!updateData.path || !updateData.method) {
@@ -517,8 +521,10 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
     // Validate schema definition if provided
     if (updateData.schemaDefinition !== undefined) {
       try {
-        // Convert to string for storage
-        updateData.schemaDefinition = JSON.stringify(updateData.schemaDefinition);
+        // If it's a string, try to parse it to validate JSON format
+        if (typeof updateData.schemaDefinition === 'string') {
+          JSON.parse(updateData.schemaDefinition);
+        }
       } catch (error) {
         throw new ErrorResponse('Invalid schema definition format', 400);
       }
@@ -534,7 +540,42 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
       }
     }
 
-    // Update endpoint
+    // Validate numeric constraints
+    const count = updateData.count as number | undefined;
+    if (count !== undefined && (count < 1 || count > 10000)) {
+      throw new ErrorResponse('Count must be between 1 and 10000', 400);
+    }
+
+    const delay = updateData.delay as number | undefined;
+    if (delay !== undefined && (delay < 0 || delay > 5000)) {
+      throw new ErrorResponse('Delay must be between 0 and 5000 milliseconds', 400);
+    }
+
+    // Validate path format
+    const path = updateData.path as string | undefined;
+    if (path !== undefined) {
+      const pathRegex = /^\/[a-zA-Z0-9\-_\/]*$/;
+      if (!pathRegex.test(path)) {
+        throw new ErrorResponse('Invalid path format. Path must start with / and contain only alphanumeric characters, hyphens, underscores, and forward slashes', 400);
+      }
+    }
+
+    // Validate parameter path if provided
+    const parameterPath = updateData.parameterPath as string | undefined;
+    if (parameterPath !== undefined) {
+      const paramPathRegex = /^[a-zA-Z0-9\-_\/]*$/;
+      if (!paramPathRegex.test(parameterPath)) {
+        throw new ErrorResponse('Invalid parameter path format. Must contain only alphanumeric characters, hyphens, underscores, and forward slashes', 400);
+      }
+    }
+
+    // Find endpoint first to validate it exists and belongs to the correct project
+    const existingEndpoint = await Endpoint.findById(endpointId);
+    if (!existingEndpoint) {
+      throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
+    }
+
+    // Update endpoint with validated and sanitized data
     const endpoint = await Endpoint.findByIdAndUpdate(
       endpointId,
       updateData,
@@ -545,7 +586,7 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
     );
 
     if (!endpoint) {
-      throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 400);
+      throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
     }
 
     res.status(200).json({

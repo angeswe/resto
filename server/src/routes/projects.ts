@@ -376,7 +376,7 @@ router.route('/:id')
 
       // Validate and sanitize input
       const updateData: Partial<typeof Project.schema.obj> = {
-        name: typeof req.body.name === 'string' 
+        name: typeof req.body.name === 'string'
           ? req.body.name.trim()
           : undefined,
         description: typeof req.body.description === 'string'
@@ -385,21 +385,21 @@ router.route('/:id')
         defaultSchema: typeof req.body.defaultSchema === 'object' && req.body.defaultSchema !== null
           ? req.body.defaultSchema
           : undefined,
-        defaultCount: typeof req.body.defaultCount === 'number' && req.body.defaultCount >= 1 && req.body.defaultCount <= 10000
+        defaultCount: typeof req.body.defaultCount === 'number' && req.body.defaultCount >= 0
           ? Math.floor(req.body.defaultCount)
           : undefined,
         requireAuth: typeof req.body.requireAuth === 'boolean'
           ? Boolean(req.body.requireAuth)
           : undefined,
         apiKeys: Array.isArray(req.body.apiKeys)
-          ? req.body.apiKeys.filter(key => typeof key === 'string').map(key => key.trim())
+          ? req.body.apiKeys.filter((key: unknown): key is string => typeof key === 'string').map((key: string) => key.trim())
           : undefined
       };
 
       // Remove undefined values
-      for (const [key, value] of Object.entries(updateData)) {
-        if (value === undefined) {
-          delete updateData[key as keyof typeof updateData];
+      for (const key of Object.keys(updateData) as Array<keyof typeof updateData>) {
+        if (updateData[key] === undefined) {
+          delete updateData[key];
         }
       }
 
@@ -418,6 +418,47 @@ router.route('/:id')
         }
       }
 
+      // Validate numeric constraints
+      const defaultCount = updateData.defaultCount as number | undefined;
+      if (defaultCount !== undefined && (defaultCount < 1 || defaultCount > 10000)) {
+        throw new ErrorResponse('Default count must be between 1 and 10000', 400);
+      }
+
+      // Validate API keys
+      const apiKeys = updateData.apiKeys as string[] | undefined;
+      if (apiKeys !== undefined) {
+        if (!Array.isArray(apiKeys)) {
+          throw new ErrorResponse('API keys must be an array', 400);
+        }
+        // Validate each API key
+        for (const key of apiKeys) {
+          if (typeof key !== 'string' || key.length < 8 || key.length > 64 || !/^[a-zA-Z0-9_-]+$/.test(key)) {
+            throw new ErrorResponse('Invalid API key format. Keys must be 8-64 characters long and contain only alphanumeric characters, underscores, and hyphens', 400);
+          }
+        }
+      }
+
+      // Validate name format
+      const name = updateData.name as string | undefined;
+      if (name !== undefined) {
+        if (name.length < 1 || name.length > 100 || !/^[a-zA-Z0-9\s_-]+$/.test(name)) {
+          throw new ErrorResponse('Invalid project name. Must be 1-100 characters long and contain only alphanumeric characters, spaces, underscores, and hyphens', 400);
+        }
+      }
+
+      // Validate description length if provided
+      const description = updateData.description as string | undefined;
+      if (description !== undefined && description.length > 500) {
+        throw new ErrorResponse('Description must not exceed 500 characters', 400);
+      }
+
+      // Find project first to validate it exists
+      const existingProject = await Project.findById(projectId);
+      if (!existingProject) {
+        throw new ErrorResponse(`Project not found with id of ${projectId}`, 404);
+      }
+
+      // Update project with validated and sanitized data
       const project = await Project.findByIdAndUpdate(
         projectId,
         updateData,
