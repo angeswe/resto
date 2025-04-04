@@ -39,7 +39,15 @@ const router = express.Router();
  */
 router.get('/debug', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Only allow access if request has valid projectId
+    // Only allow access in development mode
+    if (process.env.NODE_ENV !== 'development') {
+      return res.status(403).json({
+        success: false,
+        error: 'Debug endpoint is only available in development mode'
+      });
+    }
+
+    // Validate project ID
     const projectId = req.params.projectId;
     if (!projectId || !Types.ObjectId.isValid(projectId)) {
       return res.status(403).json({
@@ -51,20 +59,10 @@ router.get('/debug', async (req: Request, res: Response, next: NextFunction) => 
 
     // Only show endpoints for this project
     const endpoints = await Endpoint.find({ projectId }).lean();
-    
-    // Filter out sensitive information
-    const filteredEndpoints = endpoints.map(ep => ({
-      id: ep._id,
-      path: ep.path,
-      method: ep.method,
-      projectId: ep.projectId.toString(),
-      createdAt: ep.createdAt,
-      updatedAt: ep.updatedAt
-    }));
 
     res.json({
-      endpointCount: filteredEndpoints.length,
-      endpoints: filteredEndpoints
+      endpointCount: endpoints.length,
+      endpoints
     });
   } catch (error) {
     console.error('Error getting endpoints:', error);
@@ -254,7 +252,7 @@ router.post('/projects/:projectId/endpoints', async (req: Request, res: Response
     // Validate required fields
     const requiredFields = ['path', 'method'];
     const missingFields = requiredFields.filter(field => !Object.prototype.hasOwnProperty.call(req.body, field));
-    
+
     if (missingFields.length > 0) {
       throw new ErrorResponse(`Missing required fields: ${missingFields.join(', ')}`, 400);
     }
@@ -341,7 +339,7 @@ router.post('/projects/:projectId/endpoints', async (req: Request, res: Response
 router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { projectId, endpointId } = req.params;
-    
+
     if (!Types.ObjectId.isValid(projectId) || !Types.ObjectId.isValid(endpointId)) {
       return res.status(400).json({
         success: false,
@@ -457,38 +455,82 @@ router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, re
 router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const endpointId = req.params.endpointId;
-    console.log('Update request received:', {
-      endpointId,
-      body: req.body
-    });
+    if (!Types.ObjectId.isValid(endpointId)) {
+      throw new ErrorResponse('Invalid endpoint ID format', 400);
+    }
 
     // Validate required fields
     const requiredFields = ['path', 'method'];
     const missingFields = requiredFields.filter(field => !Object.prototype.hasOwnProperty.call(req.body, field));
-    
+
     if (missingFields.length > 0) {
       throw new ErrorResponse(`Missing required fields: ${missingFields.join(', ')}`, 400);
     }
 
-    // Validate path starts with /
-    const path = req.body.path.startsWith('/') ? req.body.path : '/' + req.body.path;
+    // Validate and sanitize input
+    const updateData = {
+      path: req.body.path.startsWith('/') ? req.body.path : '/' + req.body.path,
+      method: req.body.method,
+      response: req.body.response,
+      schemaDefinition: req.body.schemaDefinition,
+      count: req.body.count,
+      supportPagination: req.body.supportPagination,
+      requireAuth: req.body.requireAuth,
+      apiKeys: req.body.apiKeys,
+      delay: req.body.delay,
+      responseType: req.body.responseType,
+      parameterPath: req.body.parameterPath
+    };
+
+    // Validate schema definition if provided
+    if (updateData.schemaDefinition !== undefined) {
+      // Validate that the schema is an object
+      if (typeof updateData.schemaDefinition !== 'object' || updateData.schemaDefinition === null) {
+        throw new ErrorResponse('schemaDefinition must be a valid JSON object', 400);
+      }
+
+      // Convert to string for storage
+      updateData.schemaDefinition = JSON.stringify(updateData.schemaDefinition);
+    }
+
+    // Validate response if provided
+    if (updateData.response !== undefined) {
+      // Validate that the response is an object
+      if (typeof updateData.response !== 'object' || updateData.response === null) {
+        throw new ErrorResponse('response must be a valid JSON object', 400);
+      }
+
+      // Convert to string for storage
+      updateData.response = JSON.stringify(updateData.response);
+    }
+
+    // Validate numeric fields
+    if (updateData.count !== undefined) {
+      if (typeof updateData.count !== 'number' || updateData.count <= 0) {
+        throw new ErrorResponse('count must be a positive number', 400);
+      }
+    }
+
+    if (updateData.delay !== undefined) {
+      if (typeof updateData.delay !== 'number' || updateData.delay < 0) {
+        throw new ErrorResponse('delay must be a non-negative number', 400);
+      }
+    }
+
+    // Validate apiKeys if provided
+    if (updateData.apiKeys !== undefined) {
+      if (!Array.isArray(updateData.apiKeys)) {
+        throw new ErrorResponse('apiKeys must be an array', 400);
+      }
+      updateData.apiKeys = updateData.apiKeys
+        .filter((key: any) => typeof key === 'string')
+        .map((key: string) => key.trim());
+    }
 
     // Update endpoint
     const endpoint = await Endpoint.findByIdAndUpdate(
       endpointId,
-      {
-        path,
-        method: req.body.method,
-        response: req.body.response,
-        schemaDefinition: req.body.schemaDefinition,
-        count: req.body.count,
-        supportPagination: req.body.supportPagination,
-        requireAuth: req.body.requireAuth,
-        apiKeys: req.body.apiKeys,
-        delay: req.body.delay,
-        responseType: req.body.responseType,
-        parameterPath: req.body.parameterPath
-      },
+      updateData,
       {
         new: true,
         runValidators: true
@@ -496,7 +538,7 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
     );
 
     if (!endpoint) {
-      throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
+      throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 400);
     }
 
     res.status(200).json({

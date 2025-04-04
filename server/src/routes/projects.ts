@@ -109,8 +109,16 @@ const formatProject = (project: IProject) => ({
 router.route('/')
   .get(async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const projects = await Project.find().populate('endpoints');
+      // Validate project ID if provided
+      const projectId = req.params.projectId;
+      if (projectId && !Types.ObjectId.isValid(projectId)) {
+        throw new ErrorResponse('Invalid project ID format', 400);
+      }
+
+      const query = projectId ? { _id: projectId } : {};
+      const projects = await Project.find(query).populate('endpoints');
       const formattedProjects = projects.map(formatProject);
+
       res.status(200).json({
         success: true,
         data: formattedProjects
@@ -129,14 +137,49 @@ router.route('/')
         throw new ErrorResponse(`Missing required fields: ${missingFields.join(', ')}`, 400);
       }
 
-      const project = await Project.create({
-        name: req.body.name,
-        description: req.body.description,
+      // Validate and sanitize input
+      const projectData = {
+        name: req.body.name?.trim(),
+        description: req.body.description?.trim(),
         defaultSchema: req.body.defaultSchema,
         defaultCount: req.body.defaultCount,
         requireAuth: req.body.requireAuth,
         apiKeys: req.body.apiKeys
-      });
+      };
+
+      // Validate schema definition if provided
+      if (projectData.defaultSchema) {
+        try {
+          // If it's already an object, convert to string and back to validate
+          const schema = typeof projectData.defaultSchema === 'string' 
+            ? JSON.parse(projectData.defaultSchema)
+            : projectData.defaultSchema;
+          
+          // Convert back to string for storage
+          projectData.defaultSchema = JSON.stringify(schema);
+        } catch (e) {
+          throw new ErrorResponse('Invalid JSON in defaultSchema', 400);
+        }
+      }
+
+      // Validate defaultCount if provided
+      if (projectData.defaultCount !== undefined) {
+        if (typeof projectData.defaultCount !== 'number' || projectData.defaultCount <= 0) {
+          throw new ErrorResponse('defaultCount must be a positive number', 400);
+        }
+      }
+
+      // Validate apiKeys if provided
+      if (projectData.apiKeys) {
+        if (!Array.isArray(projectData.apiKeys)) {
+          throw new ErrorResponse('apiKeys must be an array', 400);
+        }
+        projectData.apiKeys = projectData.apiKeys
+          .filter((key: any) => typeof key === 'string')
+          .map((key: string) => key.trim());
+      }
+
+      const project = await Project.create(projectData);
 
       res.status(201).json({
         success: true,
@@ -333,16 +376,57 @@ router.route('/:id')
         throw new ErrorResponse(`Missing required fields: ${missingFields.join(', ')}`, 400);
       }
 
+      // Validate project ID
+      const projectId = req.params.id;
+      if (!Types.ObjectId.isValid(projectId)) {
+        throw new ErrorResponse('Invalid project ID format', 400);
+      }
+
+      // Validate and sanitize input
+      const updateData = {
+        name: req.body.name?.trim(),
+        description: req.body.description?.trim(),
+        defaultSchema: req.body.defaultSchema,
+        defaultCount: req.body.defaultCount,
+        requireAuth: req.body.requireAuth,
+        apiKeys: req.body.apiKeys
+      };
+
+      // Validate schema definition if provided
+      if (updateData.defaultSchema) {
+        try {
+          // If it's already an object, convert to string and back to validate
+          const schema = typeof updateData.defaultSchema === 'string' 
+            ? JSON.parse(updateData.defaultSchema)
+            : updateData.defaultSchema;
+          
+          // Convert back to string for storage
+          updateData.defaultSchema = JSON.stringify(schema);
+        } catch (e) {
+          throw new ErrorResponse('Invalid JSON in defaultSchema', 400);
+        }
+      }
+
+      // Validate defaultCount if provided
+      if (updateData.defaultCount !== undefined) {
+        if (typeof updateData.defaultCount !== 'number' || updateData.defaultCount <= 0) {
+          throw new ErrorResponse('defaultCount must be a positive number', 400);
+        }
+      }
+
+      // Validate apiKeys if provided
+      if (updateData.apiKeys) {
+        if (!Array.isArray(updateData.apiKeys)) {
+          throw new ErrorResponse('apiKeys must be an array', 400);
+        }
+        updateData.apiKeys = updateData.apiKeys
+          .filter((key: any) => typeof key === 'string')
+          .map((key: string) => key.trim());
+      }
+
       const project = await Project.findByIdAndUpdate(
-        req.params.id,
-        {
-          name: req.body.name,
-          description: req.body.description,
-          defaultSchema: req.body.defaultSchema,
-          defaultCount: req.body.defaultCount,
-          requireAuth: req.body.requireAuth,
-          apiKeys: req.body.apiKeys
-        },
+        projectId,
+        updateData,
         {
           new: true,
           runValidators: true
@@ -350,7 +434,7 @@ router.route('/:id')
       );
 
       if (!project) {
-        throw new ErrorResponse(`Project not found with id of ${req.params.id}`, 404);
+        throw new ErrorResponse(`Project not found with id of ${projectId}`, 404);
       }
 
       res.status(200).json({
@@ -363,13 +447,19 @@ router.route('/:id')
   })
   .delete(async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const project = await Project.findById(req.params.id);
+      // Validate project ID
+      const projectId = req.params.id;
+      if (!Types.ObjectId.isValid(projectId)) {
+        throw new ErrorResponse('Invalid project ID format', 400);
+      }
+
+      const project = await Project.findById(projectId);
       if (!project) {
-        throw new ErrorResponse(`Project not found with id of ${req.params.id}`, 404);
+        throw new ErrorResponse(`Project not found with id of ${projectId}`, 404);
       }
 
       // Delete associated endpoints
-      await Endpoint.deleteMany({ projectId: req.params.id });
+      await Endpoint.deleteMany({ projectId });
 
       // Delete the project
       await project.deleteOne();
@@ -377,7 +467,7 @@ router.route('/:id')
       res.status(200).json({
         success: true,
         data: {
-          id: req.params.id
+          id: projectId
         }
       });
     } catch (error) {
