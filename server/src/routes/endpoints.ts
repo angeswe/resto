@@ -506,64 +506,20 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
         : undefined
     };
 
+    // Validate parameter path if provided
+    const parameterPath = req.body.parameterPath;
+    if (parameterPath !== undefined && parameterPath !== null && parameterPath !== '') {
+      const paramPathRegex = /^[a-zA-Z0-9\-_\/:]*$/;
+      if (!paramPathRegex.test(parameterPath)) {
+        throw new ErrorResponse('Invalid parameter path format. Must contain only alphanumeric characters, hyphens, underscores, forward slashes, and colons', 400);
+      }
+    }
+
     // Remove undefined values
     for (const key of Object.keys(updateData) as Array<keyof typeof updateData>) {
       if (updateData[key] === undefined) {
         delete updateData[key];
       }
-    }
-
-    // Validate required fields after sanitization
-    if (!updateData.path || !updateData.method) {
-      throw new ErrorResponse('Invalid or missing required fields: path and method', 400);
-    }
-
-    // Validate schema definition if provided
-    if (updateData.schemaDefinition !== undefined) {
-      try {
-        // If it's a string, try to parse it to validate JSON format
-        if (typeof updateData.schemaDefinition === 'string') {
-          JSON.parse(updateData.schemaDefinition);
-        }
-      } catch (error) {
-        throw new ErrorResponse('Invalid schema definition format', 400);
-      }
-    }
-
-    // Validate response if provided
-    if (updateData.response !== undefined) {
-      try {
-        // Ensure response can be properly serialized
-        JSON.stringify(updateData.response);
-      } catch (error) {
-        throw new ErrorResponse('Invalid response format', 400);
-      }
-    }
-
-    // Validate numeric constraints
-    const count = updateData.count as number | undefined;
-    if (count !== undefined && (count < 1 || count > 10000)) {
-      throw new ErrorResponse('Count must be between 1 and 10000', 400);
-    }
-
-    const delay = updateData.delay as number | undefined;
-    if (delay !== undefined && (delay < 0 || delay > 5000)) {
-      throw new ErrorResponse('Delay must be between 0 and 5000 milliseconds', 400);
-    }
-
-    // Validate path format
-    const path = updateData.path as string | undefined;
-    if (path !== undefined) {
-      const pathRegex = /^\/[a-zA-Z0-9\-_\/]*$/;
-      if (!pathRegex.test(path)) {
-        throw new ErrorResponse('Invalid path format. Path must start with / and contain only alphanumeric characters, hyphens, underscores, and forward slashes', 400);
-      }
-    }
-
-    // Find endpoint first to validate it exists and belongs to the correct project
-    const existingEndpoint = await Endpoint.findById(endpointId);
-    if (!existingEndpoint) {
-      throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
     }
 
     // Validate all fields against schema
@@ -581,19 +537,6 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
     // Ensure _id and __v cannot be modified
     delete sanitizedData._id;
     delete sanitizedData.__v;
-
-    // Validate parameter path if provided
-    const parameterPath = sanitizedData.parameterPath;
-    console.log('Parameter path:', parameterPath);
-    console.log('Parameter path type:', typeof parameterPath);
-    if (parameterPath !== undefined && parameterPath !== null && parameterPath !== '') {
-      const paramPathRegex = /^[a-zA-Z0-9\-_\/:]*$/;
-      console.log('Testing regex on:', parameterPath);
-      console.log('Regex test result:', paramPathRegex.test(parameterPath as string));
-      if (!paramPathRegex.test(parameterPath as string)) {
-        throw new ErrorResponse('Invalid parameter path format. Must contain only alphanumeric characters, hyphens, underscores, forward slashes, and colons', 400);
-      }
-    }
 
     // Update endpoint with validated and sanitized data
     const endpoint = await Endpoint.findOneAndUpdate(

@@ -374,6 +374,58 @@ router.route('/:id')
         throw new ErrorResponse('Invalid project ID format', 400);
       }
 
+      // Validate name format on raw input
+      const name = req.body.name;
+      if (name !== undefined) {
+        if (typeof name !== 'string' || name.length < 1 || name.length > 100 || !/^[a-zA-Z0-9\s_-]+$/.test(name)) {
+          throw new ErrorResponse('Invalid project name. Must be 1-100 characters long and contain only alphanumeric characters, spaces, underscores, and hyphens', 400);
+        }
+      }
+
+      // Validate description length on raw input
+      const description = req.body.description;
+      if (description !== undefined) {
+        if (typeof description !== 'string' || description.length > 500) {
+          throw new ErrorResponse('Description must not exceed 500 characters', 400);
+        }
+      }
+
+      // Validate API keys on raw input
+      const apiKeys = req.body.apiKeys;
+      if (apiKeys !== undefined) {
+        if (!Array.isArray(apiKeys)) {
+          throw new ErrorResponse('API keys must be an array', 400);
+        }
+        // Validate each API key
+        for (const key of apiKeys) {
+          if (typeof key !== 'string' || key.length < 8 || key.length > 64 || !/^[a-zA-Z0-9_-]+$/.test(key)) {
+            throw new ErrorResponse('Invalid API key format. Keys must be 8-64 characters long and contain only alphanumeric characters, underscores, and hyphens', 400);
+          }
+        }
+      }
+
+      // Validate defaultSchema on raw input
+      const defaultSchema = req.body.defaultSchema;
+      if (defaultSchema !== undefined) {
+        if (typeof defaultSchema !== 'object' || defaultSchema === null) {
+          throw new ErrorResponse('Invalid schema format. Must be a valid JSON object', 400);
+        }
+        try {
+          // Ensure schema can be properly serialized
+          JSON.stringify(defaultSchema);
+        } catch (error) {
+          throw new ErrorResponse('Invalid schema format', 400);
+        }
+      }
+
+      // Validate defaultCount on raw input
+      const defaultCount = req.body.defaultCount;
+      if (defaultCount !== undefined) {
+        if (typeof defaultCount !== 'number' || defaultCount < 1 || defaultCount > 10000) {
+          throw new ErrorResponse('Default count must be between 1 and 10000', 400);
+        }
+      }
+
       // Validate and sanitize input
       const updateData: Partial<typeof Project.schema.obj> = {
         name: typeof req.body.name === 'string'
@@ -403,61 +455,6 @@ router.route('/:id')
         }
       }
 
-      // Validate required fields after sanitization
-      if (!updateData.name) {
-        throw new ErrorResponse('Invalid or missing required field: name', 400);
-      }
-
-      // Validate schema if provided
-      if (updateData.defaultSchema !== undefined) {
-        try {
-          // Ensure schema can be properly serialized
-          JSON.stringify(updateData.defaultSchema);
-        } catch (error) {
-          throw new ErrorResponse('Invalid schema format', 400);
-        }
-      }
-
-      // Validate numeric constraints
-      const defaultCount = updateData.defaultCount as number | undefined;
-      if (defaultCount !== undefined && (defaultCount < 1 || defaultCount > 10000)) {
-        throw new ErrorResponse('Default count must be between 1 and 10000', 400);
-      }
-
-      // Validate API keys
-      const apiKeys = updateData.apiKeys as string[] | undefined;
-      if (apiKeys !== undefined) {
-        if (!Array.isArray(apiKeys)) {
-          throw new ErrorResponse('API keys must be an array', 400);
-        }
-        // Validate each API key
-        for (const key of apiKeys) {
-          if (typeof key !== 'string' || key.length < 8 || key.length > 64 || !/^[a-zA-Z0-9_-]+$/.test(key)) {
-            throw new ErrorResponse('Invalid API key format. Keys must be 8-64 characters long and contain only alphanumeric characters, underscores, and hyphens', 400);
-          }
-        }
-      }
-
-      // Validate name format
-      const name = updateData.name as string | undefined;
-      if (name !== undefined) {
-        if (name.length < 1 || name.length > 100 || !/^[a-zA-Z0-9\s_-]+$/.test(name)) {
-          throw new ErrorResponse('Invalid project name. Must be 1-100 characters long and contain only alphanumeric characters, spaces, underscores, and hyphens', 400);
-        }
-      }
-
-      // Validate description length if provided
-      const description = updateData.description as string | undefined;
-      if (description !== undefined && description.length > 500) {
-        throw new ErrorResponse('Description must not exceed 500 characters', 400);
-      }
-
-      // Find project first to validate it exists
-      const existingProject = await Project.findById(projectId);
-      if (!existingProject) {
-        throw new ErrorResponse(`Project not found with id of ${projectId}`, 404);
-      }
-
       // Validate all fields against schema
       const schemaFields = Object.keys(Project.schema.paths);
       const allowedFields = new Set(schemaFields);
@@ -473,6 +470,12 @@ router.route('/:id')
       // Ensure _id and __v cannot be modified
       delete sanitizedData._id;
       delete sanitizedData.__v;
+
+      // Find project first to validate it exists
+      const existingProject = await Project.findById(projectId);
+      if (!existingProject) {
+        throw new ErrorResponse(`Project not found with id of ${projectId}`, 404);
+      }
 
       // Update project with validated and sanitized data
       const project = await Project.findOneAndUpdate(
