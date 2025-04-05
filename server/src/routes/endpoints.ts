@@ -3,8 +3,15 @@ import { Endpoint } from '../models/Endpoint';
 import { Project } from '../models/Project';
 import { Types } from 'mongoose';
 import ErrorResponse from '../utils/ErrorResponse';
+import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
+
+// Set up rate limiter: maximum of 100 requests per 15 minutes
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs,
+});
 
 /**
  * @swagger
@@ -446,7 +453,7 @@ router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, re
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/endpoints/:endpointId', limiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const endpointId = req.params.endpointId;
     if (!endpointId || !Types.ObjectId.isValid(endpointId)) {
@@ -543,7 +550,7 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
 
     // Update endpoint with validated and sanitized data
     const updatedEndpoint = await Endpoint.findOneAndUpdate(
-      { _id: endpointId },
+      { _id: endpointId },  // endpointId is already validated as ObjectId
       { $set: sanitizedData },
       {
         new: true,
@@ -609,7 +616,7 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/endpoints/:endpointId', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/endpoints/:endpointId', limiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const endpointId = req.params.endpointId;
     if (!endpointId || !Types.ObjectId.isValid(endpointId)) {
@@ -619,19 +626,18 @@ router.delete('/endpoints/:endpointId', async (req: Request, res: Response, next
       });
     }
 
-    // Find endpoint to validate it exists
+    // Find endpoint first to validate it exists
     const endpoint = await Endpoint.findOne({ _id: endpointId });
     if (!endpoint) {
       throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
     }
 
-    await endpoint.deleteOne();
+    // Delete the endpoint
+    await Endpoint.deleteOne({ _id: endpointId });
 
     res.status(200).json({
       success: true,
-      data: {
-        id: endpointId
-      }
+      data: {}
     });
   } catch (error) {
     next(error instanceof Error ? error : new Error(String(error)));
