@@ -2,7 +2,7 @@ export interface Project {
   id: string;
   name: string;
   description: string;
-  defaultSchema: string;
+  defaultSchema: string | Record<string, any>;
   defaultCount: number;
   requireAuth: boolean;
   apiKeys: string[];
@@ -49,14 +49,17 @@ export interface Endpoint extends EndpointData {
 
 export interface AppContextType {
   projects: Project[];
-  loading: boolean;
-  error: string | null;
+  endpoints: Endpoint[];
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
+  loading: boolean;
+  error: string | null;
   fetchProjects: () => Promise<Project[]>;
-  addProject: (data: ProjectData) => Promise<Project>;
-  updateProject: (id: string, data: ProjectData) => Promise<Project>;
-  deleteProject: (id: string) => Promise<void>;
+  getEndpoint: (endpointId: string, projectId: string) => Promise<Endpoint>;
+  getEndpoints: (projectId: string) => Promise<Endpoint[]>;
+  addProject: (projectData: ProjectData) => Promise<Project>;
+  updateProject: (projectId: string, projectData: ProjectData) => Promise<Project>;
+  deleteProject: (projectId: string) => Promise<void>;
   addEndpoint: (projectId: string, endpointData: any) => Promise<void>;
   updateEndpoint: (projectId: string, endpointId: string, endpointData: any) => Promise<void>;
   deleteEndpoint: (projectId: string, endpointId: string) => Promise<void>;

@@ -5,7 +5,8 @@ import EndpointTester from './EndpointTester';
 import EndpointCard from './EndpointCard';
 import { endpointsApi, projectsApi } from '../../utils/api';
 import EndpointModal from './EndpointModal';
-import { Button } from '@heroui/react';
+import { Button, Card, CardBody, Link } from '@heroui/react';
+import { FolderIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 interface EndpointListProps {
   projectId: string;
@@ -27,7 +28,7 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
       // Parse schemaDefinition for each endpoint
       const parsedEndpoints = data.map(endpoint => ({
         ...endpoint,
-        schemaDefinition: typeof endpoint.schemaDefinition === 'string' 
+        schemaDefinition: typeof endpoint.schemaDefinition === 'string'
           ? JSON.parse(endpoint.schemaDefinition)
           : endpoint.schemaDefinition
       }));
@@ -104,9 +105,26 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
       </div>
 
       {endpoints.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-[var(--text-secondary)]">No endpoints found. Click "Create New Endpoint" to create one.</p>
-        </div>
+        <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600">
+          <CardBody className="flex flex-col items-center justify-center py-12">
+            <FolderIcon className="h-12 w-12 text-default-400" />
+            <h3 className="mt-2 text-sm font-medium">No endpoints</h3>
+            <p className="mt-1 text-sm text-default-500">
+              Get started by creating a new endpoint.
+            </p>
+            <div className="mt-6">
+              <Button
+                onPress={handleCreateClick}
+                color="primary"
+                variant="solid"
+                className="bg-primary-600 text-white hover:bg-primary-700"
+                startContent={<PlusIcon className="h-5 w-5" />}
+              >
+                Create Endpoint
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
       ) : (
         <div className="grid gap-4">
           {endpoints.map((endpoint) => (

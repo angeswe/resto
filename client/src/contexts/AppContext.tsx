@@ -1,11 +1,10 @@
-import { createContext, useContext, useState, useEffect, useCallback, FC, ReactNode } from "react";
-import { projectsApi } from "../utils/api";
-import { endpointsApi } from "../utils/api"; // Import the endpointsApi module
-import { toast } from "react-toastify";
-import { AppContextType, Project, ProjectData } from "../types/project";
+import { createContext, useContext, useState, useEffect, FC, ReactNode } from "react";
+import { AppContextType } from "../types/project";
+import { useProjects } from "../hooks/useProjects";
+import { useEndpoints } from "../hooks/useEndpoints";
 
 // Create context
-const AppContext = createContext<AppContextType | undefined>(undefined);
+const AppContext = createContext<AppContextType | null>(null);
 
 interface AppContextProviderProps {
   children: ReactNode;
@@ -13,11 +12,31 @@ interface AppContextProviderProps {
 
 // Context provider component
 export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
+  // Initialize hooks
+  const {
+    projects,
+    loading: projectsLoading,
+    error: projectsError,
+    fetchProjects,
+    addProject,
+    updateProject,
+    deleteProject,
+  } = useProjects();
+
+  const {
+    loading: endpointsLoading,
+    error: endpointsError,
+    endpoints,
+    getEndpoint,
+    getEndpoints,
+    addEndpoint,
+    updateEndpoint,
+    deleteEndpoint,
+  } = useEndpoints();
+
+  // Theme handling
   useEffect(() => {
     // Sync with system theme on mount
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -28,215 +47,22 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
-  // Function to fetch all projects
-  const fetchProjects = useCallback(async (): Promise<Project[]> => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await projectsApi.getProjects();
-      setProjects(data);
-      return data;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch projects');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [projectsApi, setProjects, setLoading, setError]);
-
-  // Fetch all projects on initial load
-  useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
-
-  // Add a new project
-  const addProject = async (projectData: ProjectData): Promise<Project> => {
-    try {
-      setLoading(true);
-      setError(null);
-      const newProject = await projectsApi.createProject(projectData);
-      setProjects(prev => [...prev, newProject]);
-      toast.success("Project created successfully");
-      return newProject;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add project');
-      toast.error(err instanceof Error ? err.message : 'Failed to add project');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Update a project
-  const updateProject = async (projectId: string, projectData: ProjectData): Promise<Project> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Optimistic update: update local state first
-      setProjects(prev => prev.map(project => 
-        project.id === projectId ? { ...project, ...projectData } : project
-      ));
-
-      const updatedProject = await projectsApi.updateProject(projectId, projectData);
-      // Update with the actual response
-      setProjects(prev => prev.map(project => 
-        project.id === projectId ? updatedProject : project
-      ));
-      
-      toast.success("Project updated successfully");
-      return updatedProject;
-    } catch (err) {
-      // If update fails, revert to previous state
-      setError(err instanceof Error ? err.message : 'Failed to update project');
-      toast.error(err instanceof Error ? err.message : 'Failed to update project');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Delete a project
-  const deleteProject = async (projectId: string): Promise<void> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Optimistic update: remove from local state first
-      setProjects(prev => prev.filter(project => project.id !== projectId));
-
-      // Only show success toast after successful deletion
-      await projectsApi.deleteProject(projectId);
-      toast.success("Project deleted successfully");
-    } catch (err) {
-      // If deletion fails, revert to previous state
-      setError(err instanceof Error ? err.message : 'Failed to delete project');
-      toast.error(err instanceof Error ? err.message : 'Failed to delete project');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Add a new endpoint to a project
-  const addEndpoint = async (projectId: string, endpointData: any): Promise<void> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Optimistic update: add endpoint to local state first
-      setProjects(prev => prev.map(project => 
-        project.id === projectId 
-          ? { 
-              ...project, 
-              endpoints: [...(project.endpoints || []), endpointData]
-            } 
-          : project
-      ));
-
-      const response = await endpointsApi.createEndpoint(projectId, endpointData);
-      
-      // Update with the actual endpoint data from the server
-      setProjects(prev => prev.map(project => 
-        project.id === projectId 
-          ? { 
-              ...project, 
-              endpoints: [...(project.endpoints || []), response]
-            } 
-          : project
-      ));
-
-      toast.success("Endpoint added successfully");
-    } catch (err) {
-      // If addition fails, revert to previous state
-      setError(err instanceof Error ? err.message : 'Failed to add endpoint');
-      toast.error(err instanceof Error ? err.message : 'Failed to add endpoint');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Update an endpoint in a project
-  const updateEndpoint = async (projectId: string, endpointId: string, endpointData: any): Promise<void> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Optimistic update: update endpoint in local state first
-      setProjects(prev => prev.map(project => 
-        project.id === projectId 
-          ? { 
-              ...project, 
-              endpoints: project.endpoints?.map(endpoint => 
-                endpoint.id === endpointId ? { ...endpoint, ...endpointData } : endpoint
-              ) || []
-            }
-          : project
-      ));
-
-      const response = await endpointsApi.updateEndpoint(endpointId, endpointData);
-      
-      // Update with the actual endpoint data from the server
-      setProjects(prev => prev.map(project => 
-        project.id === projectId 
-          ? { 
-              ...project, 
-              endpoints: project.endpoints?.map(endpoint => 
-                endpoint.id === endpointId ? { ...endpoint, ...response } : endpoint
-              ) || []
-            }
-          : project
-      ));
-
-      toast.success("Endpoint updated successfully");
-    } catch (err) {
-      // If update fails, revert to previous state
-      setError(err instanceof Error ? err.message : 'Failed to update endpoint');
-      toast.error(err instanceof Error ? err.message : 'Failed to update endpoint');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Delete an endpoint from a project
-  const deleteEndpoint = async (projectId: string, endpointId: string): Promise<void> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Optimistic update: remove endpoint from local state first
-      setProjects(prev => prev.map(project => 
-        project.id === projectId 
-          ? { 
-              ...project, 
-              endpoints: project.endpoints?.filter(endpoint => endpoint.id !== endpointId) || []
-            }
-          : project
-      ));
-
-      await endpointsApi.deleteEndpoint(endpointId);
-      toast.success("Endpoint deleted successfully");
-    } catch (err) {
-      // If deletion fails, revert to previous state
-      setError(err instanceof Error ? err.message : 'Failed to delete endpoint');
-      toast.error(err instanceof Error ? err.message : 'Failed to delete endpoint');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Combine loading and error states
+  const isLoading = projectsLoading || endpointsLoading;
+  const error = projectsError || endpointsError;
 
   return (
     <AppContext.Provider
       value={{
         projects,
-        loading,
-        error,
+        endpoints,
         theme,
         setTheme,
+        loading: isLoading,
+        error,
         fetchProjects,
+        getEndpoint,
+        getEndpoints,
         addProject,
         updateProject,
         deleteProject,
@@ -250,10 +76,9 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
   );
 };
 
-// Custom hook for using the context
 export const useAppContext = (): AppContextType => {
   const context = useContext(AppContext);
-  if (context === undefined) {
+  if (context === null) {
     throw new Error("useAppContext must be used within an AppContextProvider");
   }
   return context;
