@@ -353,7 +353,8 @@ router.route('/')
 router.route('/:id')
   .get(async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const project = await Project.findById(req.params.id).populate('endpoints');
+      // Get project with populated endpoints
+      const project = await Project.findOne({ _id: req.params.id }).populate('endpoints');
       if (!project) {
         throw new ErrorResponse(`Project not found with id of ${req.params.id}`, 404);
       }
@@ -472,7 +473,7 @@ router.route('/:id')
       delete sanitizedData.__v;
 
       // Find project first to validate it exists
-      const existingProject = await Project.findById(projectId);
+      const existingProject = await Project.findOne({ _id: projectId });
       if (!existingProject) {
         throw new ErrorResponse(`Project not found with id of ${projectId}`, 404);
       }
@@ -507,7 +508,7 @@ router.route('/:id')
         throw new ErrorResponse('Invalid project ID format', 400);
       }
 
-      const project = await Project.findById(projectId);
+      const project = await Project.findOne({ _id: projectId });
       if (!project) {
         throw new ErrorResponse(`Project not found with id of ${projectId}`, 404);
       }

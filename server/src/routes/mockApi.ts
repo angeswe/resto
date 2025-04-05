@@ -328,7 +328,7 @@ router.all('*', async (req: Request, res: Response) => {
     // Find matching endpoint and project
     const [endpoints, project] = await Promise.all([
       Endpoint.find({ projectId: req.projectId }).lean(),
-      Project.findById(req.projectId).lean()
+      Project.findOne({ _id: req.projectId }).lean()
     ]);
 
     if (!project) {

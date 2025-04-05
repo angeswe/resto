@@ -341,7 +341,7 @@ router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, re
       });
     }
 
-    const endpoint = await Endpoint.findById(endpointId);
+    const endpoint = await Endpoint.findOne({ _id: endpointId });
     if (!endpoint) {
       throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
     }
@@ -535,8 +535,14 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
     delete sanitizedData._id;
     delete sanitizedData.__v;
 
+    // Find endpoint first to validate it exists
+    const endpoint = await Endpoint.findOne({ _id: endpointId });
+    if (!endpoint) {
+      throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
+    }
+
     // Update endpoint with validated and sanitized data
-    const endpoint = await Endpoint.findOneAndUpdate(
+    const updatedEndpoint = await Endpoint.findOneAndUpdate(
       { _id: endpointId },
       { $set: sanitizedData },
       {
@@ -545,13 +551,9 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
       }
     );
 
-    if (!endpoint) {
-      throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
-    }
-
     res.status(200).json({
       success: true,
-      data: endpoint
+      data: updatedEndpoint
     });
   } catch (error) {
     next(error instanceof Error ? error : new Error(String(error)));
@@ -617,7 +619,8 @@ router.delete('/endpoints/:endpointId', async (req: Request, res: Response, next
       });
     }
 
-    const endpoint = await Endpoint.findById(endpointId);
+    // Find endpoint to validate it exists
+    const endpoint = await Endpoint.findOne({ _id: endpointId });
     if (!endpoint) {
       throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
     }
