@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { dracula } from '@uiw/codemirror-theme-dracula';
@@ -9,109 +9,103 @@ import { ArrowLeftIcon } from '@heroicons/react/24/solid';
 import { ClipboardIcon } from '@heroicons/react/24/outline';
 import { METHOD_STATUS_CODES } from '../../types/http';
 import { API_URLS } from '../../config/api';
-import { Endpoint } from '../../types/project';
 import { useAppContext } from '../../contexts/AppContext';
 
-const EndpointDocs: React.FC = () => {
+interface EndpointDocsProps {
+  endpoint: {
+    id: string;
+    path: string;
+    method: string;
+    schemaDefinition: string | Record<string, any>;
+    count: number;
+    supportPagination: boolean;
+    requireAuth: boolean;
+    apiKeys: string[];
+    delay: number;
+    responseType: string;
+    parameterPath: string;
+    responseHttpStatus: string;
+    projectId: string;
+  };
+  projectId: string;
+}
+
+const EndpointDocs: React.FC<EndpointDocsProps> = ({ endpoint, projectId }) => {
   const { theme } = useAppContext();
-  const { projectId, endpointId } = useParams<{ projectId: string; endpointId: string }>();
-  const [endpoint, setEndpoint] = useState<Endpoint | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    const fetchEndpoint = async () => {
-      try {
-        if (!projectId || !endpointId) return;
-        const response = await fetch(API_URLS.getEndpoint(projectId, endpointId));
-        if (!response.ok) {
-          throw new Error('Failed to fetch endpoint');
-        }
-        const { data } = await response.json();
-        setEndpoint(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEndpoint();
-  }, [projectId, endpointId]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (error || !endpoint) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-red-600 text-lg">{error || 'Endpoint not found'}</div>
-      </div>
-    );
-  }
-
-  const responseSchema = endpoint.supportPagination
-    ? {
-        ...endpoint.schemaDefinition,
-        total: "(number) Total number of items",
-        page: "(number) Current page number",
-        totalPages: "(number) Total number of pages"
-      }
+  // Parse schema if it's a string
+  const parsedSchema = typeof endpoint.schemaDefinition === 'string'
+    ? JSON.parse(endpoint.schemaDefinition)
     : endpoint.schemaDefinition;
 
+  // Now parsedSchema is guaranteed to be Record<string, any>
+  const schema: Record<string, any> = parsedSchema;
+
   // Create an example response by replacing schema placeholders with realistic values
-  const generateExampleValue = (schema: any): any => {
-    if (typeof schema === 'string' && schema.startsWith('(random:')) {
-      const type = schema.slice(8, -1); // Remove "(random:" and ")"
-      switch (type) {
-        case 'name':
-          return 'John Doe';
-        case 'email':
-          return 'john.doe@example.com';
-        case 'date':
-          return '2025-03-24';
-        case 'number':
-          return 42;
-        case 'boolean':
-          return true;
-        case 'string':
-          return 'example';
-        default:
-          return 'example value';
-      }
+  const generateExampleValue = (schema: Record<string, any>): Record<string, any> => {
+    if (typeof schema === 'string') {
+      return { value: schema };
     }
-    
-    if (Array.isArray(schema)) {
-      return schema.map(item => generateExampleValue(item));
-    }
-    
-    if (typeof schema === 'object' && schema !== null) {
-      const result: any = {};
-      for (const [key, value] of Object.entries(schema)) {
+
+    const result: Record<string, any> = {};
+    for (const [key, value] of Object.entries(schema)) {
+      if (typeof value === 'string' && value.startsWith('(random:')) {
+        const type = value.match(/^\(random:(\w+)\)$/)?.[1] || 'string';
+        switch (type) {
+          case 'uuid':
+            result[key] = '123e4567-e89b-12d3-a456-426614174000';
+            break;
+          case 'string':
+            result[key] = 'example';
+            break;
+          case 'name':
+            result[key] = 'John Doe';
+            break;
+          case 'email':
+            result[key] = 'example@email.com';
+            break;
+          case 'number':
+            result[key] = 42;
+            break;
+          case 'boolean':
+            result[key] = true;
+            break;
+          case 'datetime':
+            result[key] = new Date().toISOString();
+            break;
+          case 'date':
+            result[key] = new Date().toISOString().split('T')[0];
+            break;
+          default:
+            result[key] = value;
+        }
+      } else if (Array.isArray(value)) {
+        result[key] = value.map(item => generateExampleValue({ value: item }).value);
+      } else if (typeof value === 'object' && value !== null) {
         result[key] = generateExampleValue(value);
+      } else {
+        result[key] = value;
       }
-      return result;
     }
-    
-    return schema;
+    return result;
   };
 
   const responseExample = endpoint.supportPagination
     ? {
-        ...generateExampleValue(endpoint.schemaDefinition),
-        total: endpoint.count,
-        page: 1,
-        totalPages: Math.ceil(endpoint.count / 10)
-      }
-    : generateExampleValue(endpoint.schemaDefinition);
+      data: generateExampleValue(schema),
+      total: endpoint.count,
+      page: 1,
+      totalPages: Math.ceil(endpoint.count / 10)
+    }
+    : generateExampleValue(schema);
 
-  const fullPath = endpoint ? API_URLS.getMockUrl(endpoint.projectId, endpoint.path) : '';
+  // Convert schema to string for display
+  const schemaString = typeof endpoint.schemaDefinition === 'string'
+    ? endpoint.schemaDefinition
+    : JSON.stringify(endpoint.schemaDefinition, null, 2);
+
+  const fullPath = API_URLS.getMockUrl(endpoint.projectId, endpoint.path);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(fullPath).then(() => {
@@ -123,7 +117,7 @@ const EndpointDocs: React.FC = () => {
   return (
     <div className="space-y-8 p-6">
       <div className="flex items-center gap-4">
-        <Link 
+        <Link
           to={`/projects/${projectId}/settings`}
           className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]"
         >
@@ -134,7 +128,7 @@ const EndpointDocs: React.FC = () => {
 
       <div>
         <h2 className="text-xl font-semibold mb-4 text-[var(--text-primary)]">API Documentation</h2>
-        
+
         <div className="space-y-6">
           <div>
             <h3 className="text-lg font-medium text-[var(--text-primary)]">Full URL</h3>
@@ -258,14 +252,14 @@ const EndpointDocs: React.FC = () => {
 
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-medium mb-2 text-[var(--text-primary)]">Response Schema</h3>
+              <h3 className="text-lg font-medium mb-2 text-[var(--text-primary)]">Schema Definition</h3>
               <div className="space-y-2">
                 <p className="text-sm text-[var(--text-secondary)]">
-                  {endpoint.supportPagination ? 'Response schema with pagination:' : 'Response schema:'}
+                  {endpoint.supportPagination ? 'Schema definition with pagination:' : 'Schema definition:'}
                 </p>
                 <div className="overflow-hidden border border-[var(--border-color)] rounded-lg">
                   <CodeMirror
-                    value={JSON.stringify(responseSchema, null, 2)}
+                    value={schemaString}
                     height="200px"
                     extensions={[json()]}
                     readOnly
@@ -296,12 +290,14 @@ const EndpointDocs: React.FC = () => {
             </div>
           </div>
 
-          <CodeExamples 
-            endpointId={endpoint.id} 
-            projectId={projectId || ''} 
+          <CodeExamples
+            endpointId={endpoint.id}
+            projectId={projectId}
             method={endpoint.method}
             path={endpoint.path}
-            schemaDefinition={endpoint.schemaDefinition}
+            schemaDefinition={parsedSchema}
+            requireAuth={endpoint.requireAuth}
+            apiKeys={endpoint.apiKeys}
           />
         </div>
       </div>

@@ -1,41 +1,57 @@
 import React, { useState, useEffect } from 'react';
-import { Endpoint } from '../../types/project';
 import Modal from '../common/Modal';
-import CodeMirror from '@uiw/react-codemirror';
-import { json } from '@codemirror/lang-json';
-import { dracula } from '@uiw/codemirror-theme-dracula';
-import { githubLight } from '@uiw/codemirror-theme-github';
+import SchemaEditor from '../projects/SchemaEditor';
 import { API_URLS } from '../../config/api';
 import { useAppContext } from '../../contexts/AppContext';
 
 interface EndpointTesterProps {
   isOpen: boolean;
   onClose: () => void;
-  endpoint: Endpoint;
+  endpoint: {
+    id: string;
+    path: string;
+    method: string;
+    schemaDefinition: string | Record<string, any>;
+    count: number;
+    supportPagination: boolean;
+    requireAuth: boolean;
+    apiKeys: string[];
+    delay: number;
+    responseType: string;
+    parameterPath: string;
+    responseHttpStatus: string;
+  };
   projectId: string;
 }
 
 interface ResponseInfo {
   status: number;
   statusText: string;
-  data: any;
+  data: Record<string, any>;
   message: string | null;
 }
 
 const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoint, projectId }) => {
   const { theme } = useAppContext();
-  const [requestBody, setRequestBody] = useState<string>(
-    JSON.stringify(endpoint.schemaDefinition, null, 2)
+  const [requestBody, setRequestBody] = useState<Record<string, any>>(
+    typeof endpoint.schemaDefinition === 'string'
+      ? JSON.parse(endpoint.schemaDefinition)
+      : endpoint.schemaDefinition
   );
   const [response, setResponse] = useState<ResponseInfo | null>(null);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && endpoint.schemaDefinition) {
+      setRequestBody(
+        typeof endpoint.schemaDefinition === 'string'
+          ? JSON.parse(endpoint.schemaDefinition)
+          : endpoint.schemaDefinition
+      );
       handleTest();
     }
-  }, [isOpen]);
+  }, [isOpen, endpoint.schemaDefinition]);
 
   const handleTest = async () => {
     try {
@@ -73,15 +89,34 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
             : {})
         },
         ...(endpoint.method === 'POST' || endpoint.method === 'PUT' ? {
-          body: requestBody
+          body: JSON.stringify(requestBody)
         } : {})
       });
 
       const data = await fetchResponse.json();
+      
+      // Ensure we always get a plain object
+      const parsedData = typeof data === 'string' 
+        ? JSON.parse(data) 
+        : data;
+
+      // If the parsed data has a data property, use that
+      const finalData = parsedData.data || parsedData;
+
+      // If the data is still a string, try to parse it
+      const normalizedData = typeof finalData === 'string' 
+        ? JSON.parse(finalData) 
+        : finalData;
+
+      // Final fallback - handle primitive values
+      const finalResponseData = typeof normalizedData === 'object' && normalizedData !== null
+        ? normalizedData
+        : { value: String(normalizedData) };
+
       setResponse({
         status: fetchResponse.status,
         statusText: fetchResponse.statusText,
-        data,
+        data: finalResponseData,
         message: fetchResponse.headers.get('X-Status-Message')
       });
     } catch (err) {
@@ -100,16 +135,19 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
           <div className="space-y-2">
             <h3 className="text-lg font-medium text-[var(--text-primary)]">Request Body</h3>
             <div className="overflow-hidden border border-[var(--border-color)] rounded-lg">
-              <CodeMirror
-                value={requestBody}
-                height="200px"
-                extensions={[json()]}
+              <SchemaEditor
+                value={typeof requestBody === 'string' ? requestBody : JSON.stringify(requestBody, null, 2)}
                 onChange={(value) => {
-                  setRequestBody(value);
-                  handleTest();
+                  try {
+                    const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+                    setRequestBody(parsed);
+                    handleTest();
+                  } catch (e) {
+                    // Handle invalid JSON if needed
+                  }
                 }}
-                theme={theme === 'dark' ? dracula : githubLight}
-                className="!bg-[var(--bg-secondary)] rounded-md"
+                isValid={true}  // We don't need validation here since we're just displaying
+                theme={theme}
               />
             </div>
           </div>
@@ -128,24 +166,21 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
               <div className="text-red-600 whitespace-pre-wrap">{error}</div>
             ) : response && (
               <>
-                <div className={`text-sm font-mono p-2 rounded ${
-                  response.status >= 200 && response.status < 300 
+                <div className={`text-sm font-mono p-2 rounded ${response.status >= 200 && response.status < 300
                     ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                     : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                }`}>
+                  }`}>
                   {response.status} {response.statusText}
                   {response.message && (
                     <div className="mt-1 text-xs opacity-80">{response.message}</div>
                   )}
                 </div>
                 <div className="overflow-hidden border border-[var(--border-color)] rounded-lg mt-2">
-                  <CodeMirror
-                    value={JSON.stringify(response.data, null, 2)}
-                    height="300px"
-                    extensions={[json()]}
-                    editable={false}
-                    theme={theme === 'dark' ? dracula : githubLight}
-                    className="border rounded-md border-[var(--input-border)]"
+                  <SchemaEditor
+                    value={response.data}
+                    onChange={() => {}}  // No need for onChange since it's read-only
+                    isValid={true}
+                    theme={theme}
                   />
                 </div>
               </>

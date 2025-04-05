@@ -4,7 +4,7 @@ interface HttpStatusCode {
   category: 'success' | 'redirection' | 'clientError' | 'serverError';
 }
 
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 // Status codes appropriate for each HTTP method
 export const METHOD_STATUS_CODES: Record<HttpMethod, HttpStatusCode[]> = {
@@ -46,6 +46,16 @@ export const METHOD_STATUS_CODES: Record<HttpMethod, HttpStatusCode[]> = {
     { code: '401', text: 'Unauthorized', category: 'clientError' },
     { code: '403', text: 'Forbidden', category: 'clientError' },
     { code: '404', text: 'Not Found', category: 'clientError' },
+    { code: '500', text: 'Internal Server Error', category: 'serverError' }
+  ],
+  PATCH: [
+    { code: '200', text: 'OK', category: 'success' },
+    { code: '204', text: 'No Content', category: 'success' },
+    { code: '400', text: 'Bad Request', category: 'clientError' },
+    { code: '401', text: 'Unauthorized', category: 'clientError' },
+    { code: '403', text: 'Forbidden', category: 'clientError' },
+    { code: '404', text: 'Not Found', category: 'clientError' },
+    { code: '409', text: 'Conflict', category: 'clientError' },
     { code: '500', text: 'Internal Server Error', category: 'serverError' }
   ]
 };

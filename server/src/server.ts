@@ -10,7 +10,7 @@ import { config } from './config';
 import { swaggerSpec } from './config/swagger';
 import { errorHandler } from './middleware/error';
 import { projectRoutes } from './routes/projects';
-import endpointRoutes from './routes/endpoints';
+import { endpointRoutes } from './routes/endpoints';
 import mockApiRoutes from './routes/mockApi';
 
 dotenv.config();

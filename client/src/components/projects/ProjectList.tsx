@@ -1,13 +1,13 @@
-import { FC, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { PlusIcon, FolderIcon } from "@heroicons/react/24/outline";
+import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { PlusIcon, FolderIcon } from "@heroicons/react/24/solid";
 import { Button, Card, CardBody } from "@heroui/react";
 import ProjectCard from "./ProjectCard";
 import Loading from "../common/Loading";
 import { useAppContext } from "../../contexts/AppContext";
 
-const ProjectList: FC = () => {
-  const { projects, loading, error, deleteProject, fetchProjects } = useAppContext();
+const ProjectList = () => {
+  const { projects, loading, deleteProject, fetchProjects } = useAppContext();
 
   // Fetch latest projects when component mounts
   useEffect(() => {
@@ -15,9 +15,9 @@ const ProjectList: FC = () => {
   }, [fetchProjects]);
 
   // Sort projects by creation date (newest first)
-  const sortedProjects = [...projects].sort((a, b) =>
+  const sortedProjects = projects ? [...projects].sort((a, b) =>
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  ) : [];
 
   // Handle project deletion
   const handleDeleteProject = async (projectId: string) => {
@@ -50,32 +50,7 @@ const ProjectList: FC = () => {
         </div>
       </div>
 
-      {error ? (
-        <div className="rounded-md bg-red-50 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-red-400"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm text-red-800 font-medium">Error loading projects</h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>{error}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : projects.length === 0 ? (
+      {projects.length === 0 ? (
         <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600">
           <CardBody className="flex flex-col items-center justify-center py-12">
             <FolderIcon className="h-12 w-12 text-default-400" />

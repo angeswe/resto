@@ -94,9 +94,9 @@ export const endpointsApi = {
   },
 
   // Get a single endpoint
-  getEndpoint: async (endpointId: string): Promise<Endpoint> => {
+  getEndpoint: async (endpointId: string, projectId: string): Promise<Endpoint> => {
     try {
-      const response: AxiosResponse<ApiResponse<Endpoint>> = await api.get(`/endpoints/${endpointId}`);
+      const response: AxiosResponse<ApiResponse<Endpoint>> = await api.get(`/projects/${projectId}/endpoints/${endpointId}`);
       return response.data.data;
     } catch (error) {
       console.error('API Error:', error);
