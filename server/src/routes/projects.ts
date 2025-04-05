@@ -4,8 +4,15 @@ import { Endpoint } from '../models/Endpoint';
 import { Types } from 'mongoose';
 import ErrorResponse from '../utils/ErrorResponse';
 import { IProject } from '../types';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
+
+// Set up rate limiter: maximum of 100 requests per 15 minutes
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs,
+});
 
 // Format project data for response
 const formatProject = (project: IProject) => ({
@@ -350,13 +357,21 @@ router.route('/')
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.route('/:id')
+router.route('/:id').all(limiter)
   .get(async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const projectId = req.params.id;
+      if (!projectId || !Types.ObjectId.isValid(projectId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid project ID'
+        });
+      }
+
       // Get project with populated endpoints
-      const project = await Project.findOne({ _id: req.params.id }).populate('endpoints');
+      const project = await Project.findOne({ _id: projectId }).populate('endpoints');
       if (!project) {
-        throw new ErrorResponse(`Project not found with id of ${req.params.id}`, 404);
+        throw new ErrorResponse(`Project not found with id of ${projectId}`, 404);
       }
 
       res.status(200).json({
