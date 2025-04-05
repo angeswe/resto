@@ -386,8 +386,19 @@ router.route('/:id').all(limiter)
     try {
       // Validate project ID
       const projectId = req.params.id;
-      if (!Types.ObjectId.isValid(projectId)) {
-        throw new ErrorResponse('Invalid project ID format', 400);
+      if (!projectId || !Types.ObjectId.isValid(projectId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid project ID'
+        });
+      }
+
+      // Validate required fields
+      const requiredFields = ['name'];
+      const missingFields = requiredFields.filter(field => !Object.prototype.hasOwnProperty.call(req.body, field));
+
+      if (missingFields.length > 0) {
+        throw new ErrorResponse(`Missing required fields: ${missingFields.join(', ')}`, 400);
       }
 
       // Validate name format on raw input
@@ -487,14 +498,8 @@ router.route('/:id').all(limiter)
       delete sanitizedData._id;
       delete sanitizedData.__v;
 
-      // Find project first to validate it exists
-      const existingProject = await Project.findOne({ _id: projectId });
-      if (!existingProject) {
-        throw new ErrorResponse(`Project not found with id of ${projectId}`, 404);
-      }
-
       // Update project with validated and sanitized data
-      const project = await Project.findOneAndUpdate(
+      const updatedProject = await Project.findOneAndUpdate(
         { _id: projectId },
         { $set: sanitizedData },
         {
@@ -503,13 +508,13 @@ router.route('/:id').all(limiter)
         }
       ).populate('endpoints');
 
-      if (!project) {
+      if (!updatedProject) {
         throw new ErrorResponse(`Project not found with id of ${projectId}`, 404);
       }
 
       res.status(200).json({
         success: true,
-        data: formatProject(project)
+        data: formatProject(updatedProject)
       });
     } catch (error) {
       next(error instanceof Error ? error : new Error(String(error)));

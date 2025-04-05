@@ -38,7 +38,7 @@ const limiter = rateLimit({
  *                       path:
  *                         type: string
  */
-router.get('/debug', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/debug', limiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Only allow access in development mode
     if (process.env.NODE_ENV !== 'development') {
@@ -112,10 +112,10 @@ router.get('/debug', async (req: Request, res: Response, next: NextFunction) => 
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/projects/:projectId/endpoints', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/projects/:projectId/endpoints', limiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projectId = req.params.projectId;
-    if (!Types.ObjectId.isValid(projectId)) {
+    if (!projectId || !Types.ObjectId.isValid(projectId)) {
       return res.status(400).json({
         success: false,
         error: 'Invalid project ID'
@@ -337,18 +337,24 @@ router.post('/projects/:projectId/endpoints', async (req: Request, res: Response
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/projects/:projectId/endpoints/:endpointId', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/projects/:projectId/endpoints/:endpointId', limiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { projectId, endpointId } = req.params;
 
-    if (!Types.ObjectId.isValid(projectId) || !Types.ObjectId.isValid(endpointId)) {
+    if (!Types.ObjectId.isValid(projectId)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid ID'
+        error: 'Invalid project ID'
+      });
+    }
+    if (!Types.ObjectId.isValid(endpointId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid endpoint ID'
       });
     }
 
-    const endpoint = await Endpoint.findOne({ _id: endpointId });
+    const endpoint = await Endpoint.findOne({ _id: endpointId, projectId });
     if (!endpoint) {
       throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
     }
