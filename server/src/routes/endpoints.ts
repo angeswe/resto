@@ -536,8 +536,8 @@ router.put('/endpoints/:endpointId', async (req: Request, res: Response, next: N
     delete sanitizedData.__v;
 
     // Update endpoint with validated and sanitized data
-    const endpoint = await Endpoint.findByIdAndUpdate(
-      endpointId,
+    const endpoint = await Endpoint.findOneAndUpdate(
+      { _id: endpointId },
       { $set: sanitizedData },
       {
         new: true,
