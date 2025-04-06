@@ -94,18 +94,18 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
       });
 
       const data = await fetchResponse.json();
-      
+
       // Ensure we always get a plain object
-      const parsedData = typeof data === 'string' 
-        ? JSON.parse(data) 
+      const parsedData = typeof data === 'string'
+        ? JSON.parse(data)
         : data;
 
       // If the parsed data has a data property, use that
       const finalData = parsedData.data || parsedData;
 
       // If the data is still a string, try to parse it
-      const normalizedData = typeof finalData === 'string' 
-        ? JSON.parse(finalData) 
+      const normalizedData = typeof finalData === 'string'
+        ? JSON.parse(finalData)
         : finalData;
 
       // Final fallback - handle primitive values
@@ -167,8 +167,8 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
             ) : response && (
               <>
                 <div className={`text-sm font-mono p-2 rounded ${response.status >= 200 && response.status < 300
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                   }`}>
                   {response.status} {response.statusText}
                   {response.message && (
@@ -178,7 +178,7 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
                 <div className="overflow-hidden border border-[var(--border-color)] rounded-lg mt-2">
                   <SchemaEditor
                     value={response.data}
-                    onChange={() => {}}  // No need for onChange since it's read-only
+                    onChange={() => { }}  // No need for onChange since it's read-only
                     isValid={true}
                     theme={theme}
                   />

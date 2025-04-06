@@ -54,12 +54,12 @@ export const useEndpoints = (): UseEndpointsReturn => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Optimistic update
       setEndpoints(prev => [...prev, endpointData]);
 
       const response = await endpointsApi.createEndpoint(projectId, endpointData);
-      
+
       // Update with actual endpoint data
       setEndpoints(prev => [...prev, response]);
 
@@ -77,16 +77,16 @@ export const useEndpoints = (): UseEndpointsReturn => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Optimistic update
-      setEndpoints(prev => prev.map(endpoint => 
+      setEndpoints(prev => prev.map(endpoint =>
         endpoint.id === endpointId ? { ...endpoint, ...endpointData } : endpoint
       ));
 
       const response = await endpointsApi.updateEndpoint(endpointId, endpointData);
-      
+
       // Update with actual endpoint data
-      setEndpoints(prev => prev.map(endpoint => 
+      setEndpoints(prev => prev.map(endpoint =>
         endpoint.id === endpointId ? { ...endpoint, ...response } : endpoint
       ));
 
@@ -104,7 +104,7 @@ export const useEndpoints = (): UseEndpointsReturn => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Optimistic update
       setEndpoints(prev => prev.filter(endpoint => endpoint.id !== endpointId));
 

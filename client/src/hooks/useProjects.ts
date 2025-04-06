@@ -52,17 +52,17 @@ export const useProjects = (): {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Optimistic update
-      setProjects(prev => prev.map(project => 
+      setProjects(prev => prev.map(project =>
         project.id === projectId ? { ...project, ...projectData } : project
       ));
 
       const updatedProject = await projectsApi.updateProject(projectId, projectData);
-      setProjects(prev => prev.map(project => 
+      setProjects(prev => prev.map(project =>
         project.id === projectId ? updatedProject : project
       ));
-      
+
       toast.success("Project updated successfully");
       return updatedProject;
     } catch (err) {
@@ -78,7 +78,7 @@ export const useProjects = (): {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Optimistic update
       setProjects(prev => prev.filter(project => project.id !== projectId));
 

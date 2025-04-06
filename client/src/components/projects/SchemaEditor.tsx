@@ -18,8 +18,8 @@ const SchemaEditor: React.FC<SchemaEditorProps> = ({
   theme,
 }) => {
   // Ensure value is always a string
-  const stringValue = typeof value === 'string' 
-    ? value 
+  const stringValue = typeof value === 'string'
+    ? value
     : JSON.stringify(value, null, 2);
 
   return (

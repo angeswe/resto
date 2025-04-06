@@ -22,13 +22,12 @@ const EndpointCard: React.FC<EndpointCardProps> = ({
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center space-x-2">
-            <span className={`px-2 py-1 text-xs font-medium rounded ${
-              endpoint.method === 'GET' ? 'bg-green-100 text-green-800' :
-              endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800' :
-              endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-800' :
-              endpoint.method === 'DELETE' ? 'bg-red-100 text-red-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
+            <span className={`px-2 py-1 text-xs font-medium rounded ${endpoint.method === 'GET' ? 'bg-green-100 text-green-800' :
+                endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800' :
+                  endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-800' :
+                    endpoint.method === 'DELETE' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+              }`}>
               {endpoint.method}
             </span>
             <h3 className="text-lg font-medium text-[var(--text-primary)]">
