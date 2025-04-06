@@ -29,7 +29,7 @@ export const useProjects = (): {
     } finally {
       setLoading(false);
     }
-  }, [projectsApi, setProjects, setLoading, setError]);
+  }, [setProjects, setLoading, setError]);
 
   const addProject = useCallback(async (projectData: ProjectData): Promise<Project> => {
     try {
@@ -46,7 +46,7 @@ export const useProjects = (): {
     } finally {
       setLoading(false);
     }
-  }, [projectsApi, setLoading, setError]);
+  }, [setLoading, setError]);
 
   const updateProject = useCallback(async (projectId: string, projectData: ProjectData): Promise<Project> => {
     try {
@@ -72,7 +72,7 @@ export const useProjects = (): {
     } finally {
       setLoading(false);
     }
-  }, [projectsApi, setLoading, setError]);
+  }, [setLoading, setError]);
 
   const deleteProject = useCallback(async (projectId: string): Promise<void> => {
     try {
@@ -91,7 +91,7 @@ export const useProjects = (): {
     } finally {
       setLoading(false);
     }
-  }, [projectsApi, setLoading, setError]);
+  }, [setLoading, setError]);
 
   useEffect(() => {
     fetchProjects();

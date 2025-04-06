@@ -136,7 +136,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({
         schemaDefinition: value
       }));
       setIsValidJson(true);
-    } catch (e) {
+    } catch {
       setIsValidJson(false);
     }
   };
@@ -179,7 +179,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({
       let parsedSchema;
       try {
         parsedSchema = JSON.parse(formData.schemaDefinition);
-      } catch (error) {
+      } catch {
         parsedSchema = defaultSchema;
       }
 

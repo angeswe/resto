@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import SchemaEditor from '../projects/SchemaEditor';
 import { useTestEndpoint } from '../../hooks/queries/useEndpointQueries';
-import { useAppContext } from '../../contexts/AppContextWithTanstack';
+import { useAppContext } from '../../hooks/useAppContext';
 
 interface EndpointTesterProps {
   isOpen: boolean;
@@ -11,7 +11,7 @@ interface EndpointTesterProps {
     id: string;
     path: string;
     method: string;
-    schemaDefinition: string | Record<string, any>;
+    schemaDefinition: string | Record<string, unknown>;
     count: number;
     //supportPagination: boolean;
     requireAuth: boolean;
@@ -27,7 +27,7 @@ interface EndpointTesterProps {
 interface ResponseInfo {
   status: number;
   statusText: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   message: string | null;
 }
 
@@ -36,7 +36,7 @@ interface ResponseInfo {
  */
 const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoint, projectId }) => {
   const { theme } = useAppContext();
-  const [requestBody, setRequestBody] = useState<Record<string, any>>(
+  const [requestBody, setRequestBody] = useState<Record<string, unknown>>(
     typeof endpoint.schemaDefinition === 'string'
       ? JSON.parse(endpoint.schemaDefinition)
       : endpoint.schemaDefinition
@@ -131,7 +131,7 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
                     const parsed = typeof value === 'string' ? JSON.parse(value) : value;
                     setRequestBody(parsed);
                     handleTest();
-                  } catch (e) {
+                  } catch {
                     // Handle invalid JSON if needed
                   }
                 }}

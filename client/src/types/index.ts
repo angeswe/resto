@@ -2,7 +2,7 @@ export interface IEndpoint {
   _id: string;
   path: string;
   method: string;
-  schemaDefinition: any;
+  schemaDefinition: Record<string, unknown>;
   count: number;
   requireAuth: boolean;
   apiKeys: string[];
@@ -16,7 +16,7 @@ export interface IProject {
   _id: string;
   name: string;
   description: string;
-  defaultSchema: any;
+  defaultSchema: Record<string, unknown>;
   defaultCount: number;
   requireAuth: boolean;
   apiKeys: string[];

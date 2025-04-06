@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { endpointsApi } from '../utils/api';
 import { toast } from 'react-toastify';
-import { Endpoint } from '../types/project';
+import { Endpoint, EndpointData } from '../types/project';
 
 interface UseEndpointsReturn {
   loading: boolean;
@@ -9,8 +9,8 @@ interface UseEndpointsReturn {
   endpoints: Endpoint[];
   getEndpoint: (endpointId: string, projectId: string) => Promise<Endpoint>;
   getEndpoints: (projectId: string) => Promise<Endpoint[]>;
-  addEndpoint: (projectId: string, endpointData: any) => Promise<void>;
-  updateEndpoint: (endpointId: string, endpointData: any) => Promise<void>;
+  addEndpoint: (projectId: string, endpointData: EndpointData) => Promise<void>;
+  updateEndpoint: (endpointId: string, endpointData: EndpointData) => Promise<void>;
   deleteEndpoint: (endpointId: string) => Promise<void>;
 }
 
@@ -50,13 +50,13 @@ export const useEndpoints = (): UseEndpointsReturn => {
     }
   }, [setEndpoints, setLoading, setError]);
 
-  const addEndpoint = useCallback(async (projectId: string, endpointData: any): Promise<void> => {
+  const addEndpoint = useCallback(async (projectId: string, endpointData: EndpointData): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
 
       // Optimistic update
-      setEndpoints(prev => [...prev, endpointData]);
+      setEndpoints(prev => [...prev, { ...endpointData, projectId } as Endpoint]);
 
       const response = await endpointsApi.createEndpoint(projectId, endpointData);
 
@@ -73,7 +73,7 @@ export const useEndpoints = (): UseEndpointsReturn => {
     }
   }, [setEndpoints, setLoading, setError]);
 
-  const updateEndpoint = useCallback(async (endpointId: string, endpointData: any): Promise<void> => {
+  const updateEndpoint = useCallback(async (endpointId: string, endpointData: EndpointData): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
@@ -84,10 +84,8 @@ export const useEndpoints = (): UseEndpointsReturn => {
       ));
 
       const response = await endpointsApi.updateEndpoint(endpointId, endpointData);
-
-      // Update with actual endpoint data
       setEndpoints(prev => prev.map(endpoint =>
-        endpoint.id === endpointId ? { ...endpoint, ...response } : endpoint
+        endpoint.id === endpointId ? response : endpoint
       ));
 
       toast.success("Endpoint updated successfully");

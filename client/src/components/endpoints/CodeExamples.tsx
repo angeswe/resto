@@ -4,7 +4,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { dracula } from '@uiw/codemirror-theme-dracula';
 import { githubLight } from '@uiw/codemirror-theme-github';
 import { API_URLS } from '../../config/api';
-import { useAppContext } from '../../contexts/AppContextWithTanstack';
+import { useAppContext } from '../../hooks/useAppContext';
 
 /**
  * Component for displaying code examples for API endpoints
@@ -14,7 +14,7 @@ interface CodeExamplesProps {
   projectId: string;
   method: string;
   path: string;
-  schemaDefinition: Record<string, any>;
+  schemaDefinition: Record<string, unknown>;
   requireAuth: boolean;
   apiKeys: string[];
 }
@@ -29,14 +29,14 @@ const CodeExamples: React.FC<CodeExamplesProps> = ({
 }) => {
   const { theme } = useAppContext();
   const baseUrl = `${API_URLS.base}/api/mock/${projectId}`;
-  const authHeader = requireAuth && apiKeys.length > 0 
-    ? `\n  -H "X-API-Key: ${apiKeys[0]}"` 
+  const authHeader = requireAuth && apiKeys.length > 0
+    ? `\n  -H "X-API-Key: ${apiKeys[0]}"`
     : '';
 
   // Only include request body for POST and PUT methods
   const hasRequestBody = method === 'POST' || method === 'PUT';
-  const requestBodyParam = hasRequestBody 
-    ? `\n  -d '${JSON.stringify(schemaDefinition, null, 2)}'` 
+  const requestBodyParam = hasRequestBody
+    ? `\n  -d '${JSON.stringify(schemaDefinition, null, 2)}'`
     : '';
 
   const curlExample = `curl -X ${method} "${baseUrl}${path}" \\
@@ -54,12 +54,12 @@ const CodeExamples: React.FC<CodeExamplesProps> = ({
   .then(data => console.log(data))
   .catch(error => console.error('Error:', error));`;
 
-  const axiosConfig = requireAuth && apiKeys.length > 0 
+  const axiosConfig = requireAuth && apiKeys.length > 0
     ? `, {
     headers: {
       "X-API-Key": "${apiKeys[0]}"
     }
-  }` 
+  }`
     : '';
 
   const axiosExample = `import axios from 'axios';
@@ -84,7 +84,7 @@ axios.${method.toLowerCase()}("${baseUrl}${path}"${hasRequestBody ? `, ${JSON.st
           editable={false}
         />
       </div>
-      
+
       <div>
         <h3 className="text-md font-medium mb-2 text-[var(--text-primary)]">JavaScript (fetch)</h3>
         <CodeMirror
@@ -95,7 +95,7 @@ axios.${method.toLowerCase()}("${baseUrl}${path}"${hasRequestBody ? `, ${JSON.st
           editable={false}
         />
       </div>
-      
+
       <div>
         <h3 className="text-md font-medium mb-2 text-[var(--text-primary)]">JavaScript (axios)</h3>
         <CodeMirror

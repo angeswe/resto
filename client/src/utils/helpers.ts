@@ -10,8 +10,8 @@ export const slugify = (text: string): string => {
     .trim()
     .replace(/\s+/g, "-") // Replace spaces with -
     .replace(/&/g, "-and-") // Replace & with 'and'
-    .replace(/[^\w\-]+/g, "") // Remove all non-word characters
-    .replace(/\-\-+/g, "-"); // Replace multiple - with single -
+    .replace(/[^\w-]+/g, "") // Remove all non-word characters
+    .replace(/--+/g, "-"); // Replace multiple - with single -
 };
 
 interface DateFormatOptions extends Intl.DateTimeFormatOptions {
@@ -191,7 +191,7 @@ interface SchemaTemplate {
   maximum?: number;
   minLength?: number;
   maxLength?: number;
-  enum?: any[];
+  enum?: string[];
   properties?: Record<string, SchemaTemplate>;
   items?: SchemaTemplate;
 }
@@ -202,7 +202,7 @@ interface SchemaTemplate {
  * @param schema - The schema template
  * @returns Generated sample data
  */
-export const generateSampleData = (schema: SchemaTemplate): any => {
+export const generateSampleData = (schema: SchemaTemplate): unknown => {
   switch (schema.type) {
     case "string": {
       if (schema.format === "date") {
@@ -239,7 +239,7 @@ export const generateSampleData = (schema: SchemaTemplate): any => {
     }
     case "object": {
       if (schema.properties) {
-        const result: Record<string, any> = {};
+        const result: Record<string, unknown> = {};
         for (const [key, prop] of Object.entries(schema.properties)) {
           result[key] = generateSampleData(prop);
         }

@@ -8,7 +8,7 @@ import { githubLight } from '@uiw/codemirror-theme-github';
  * Props for the SchemaEditor component
  */
 interface SchemaEditorProps {
-  value: string | Record<string, any>;
+  value: string | Record<string, unknown>;
   onChange: (value: string) => void;
   isValid: boolean;
   theme: 'light' | 'dark';
@@ -19,7 +19,7 @@ interface SchemaEditorProps {
  * @param schema - The schema to format
  * @returns Formatted schema string
  */
-const formatSchema = (schema: Record<string, any> | string): string => {
+const formatSchema = (schema: Record<string, unknown> | string): string => {
   try {
     // If it's already a string, parse it to ensure it's valid JSON
     const schemaObj = typeof schema === 'string' ? JSON.parse(schema) : schema;
@@ -30,7 +30,7 @@ const formatSchema = (schema: Record<string, any> | string): string => {
       .replace(/},/g, '},\n')
       // Add an extra line break after each array item (except the last one)
       .replace(/],/g, '],\n');
-  } catch (error) {
+  } catch {
     // If parsing fails, return the original value
     return typeof schema === 'string' ? schema : JSON.stringify(schema, null, 2);
   }

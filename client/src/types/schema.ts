@@ -5,7 +5,7 @@
 /**
  * Supported field types in schema definitions
  */
-export type SchemaFieldType = 
+export type SchemaFieldType =
   | 'string'
   | 'number'
   | 'boolean'
@@ -130,7 +130,7 @@ export type SchemaField =
 /**
  * Schema definition type (root level)
  */
-export type SchemaDefinition = Record<string, any>;
+export type SchemaDefinition = Record<string, unknown>;
 
 /**
  * Default schema with common fields using the random generator format
@@ -139,13 +139,13 @@ export type SchemaDefinition = Record<string, any>;
 export const DEFAULT_SCHEMA: SchemaDefinition = {
   // Unique identifier using UUID format
   id: "(random:uuid)",
-  
+
   // Random full name
   name: "(random:name)",
-  
+
   // Random email address
   email: "(random:email)",
-  
+
   // Creation timestamp in ISO format
   createdAt: "(random:datetime)"
 };

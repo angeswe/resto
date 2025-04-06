@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, FC, ReactNode } from "react";
+import { createContext, useState, useEffect, FC, ReactNode } from "react";
 
 /**
  * Simplified AppContext type that focuses on UI state
@@ -46,19 +46,6 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
       {children}
     </AppContext.Provider>
   );
-};
-
-/**
- * Hook to access the AppContext
- * @returns The AppContext value
- * @throws Error if used outside of AppContextProvider
- */
-export const useAppContext = (): AppContextType => {
-  const context = useContext(AppContext);
-  if (context === null) {
-    throw new Error("useAppContext must be used within an AppContextProvider");
-  }
-  return context;
 };
 
 export default AppContext;

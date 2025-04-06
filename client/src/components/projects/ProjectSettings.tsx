@@ -13,14 +13,14 @@ import {
 } from '@heroui/react';
 import EndpointList from '../endpoints/EndpointList';
 import { ProjectData } from '../../types/project';
-import { useAppContext } from '../../contexts/AppContextWithTanstack';
-import { useTabContext } from '../../contexts/TabContext';
+import { useTabContext } from '../../hooks/useTabContext';
 import ApiKeyManager from './ApiKeyManager';
 import SchemaEditor from './SchemaEditor';
 import ProjectDangerZone from './ProjectDangerZone';
 import { useProject, useUpdateProject, useDeleteProject } from '../../hooks/queries/useProjectQueries';
 import { DEFAULT_SCHEMA } from '../../types/schema';
 import { DeleteIcon, EndpointIcon, SettingsIcon } from '../common/Icons';
+import { useAppContext } from '../../hooks/useAppContext';
 
 /**
  * Form data interface for project settings
@@ -172,7 +172,7 @@ const ProjectSettings: React.FC = () => {
       let schemaObj;
       try {
         schemaObj = JSON.parse(formData.defaultSchema);
-      } catch (error) {
+      } catch {
         toast.error('Invalid JSON schema');
         return;
       }

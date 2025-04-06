@@ -3,7 +3,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { dracula } from '@uiw/codemirror-theme-dracula';
 import { githubLight } from '@uiw/codemirror-theme-github';
-import { useAppContext } from '../contexts/AppContextWithTanstack';
+import { useAppContext } from '../hooks/useAppContext';
 
 /**
  * Documentation component for the application

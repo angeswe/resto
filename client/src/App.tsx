@@ -11,8 +11,9 @@ import ProjectSettings from './components/projects/ProjectSettings';
 import EndpointDocs from './components/endpoints/EndpointDocs';
 import NewProject from './components/projects/NewProject';
 import Docs from './components/Docs';
-import { AppContextProvider, useAppContext } from './contexts/AppContextWithTanstack';
-import { TabContextProvider } from './contexts/TabContext';
+import { AppContextProvider } from './contexts/AppContextWithTanstack';
+import { useAppContext } from './hooks/useAppContext';
+import { TabContextProvider } from './contexts/TabContextProvider';
 import { queryClient } from './utils/query-client';
 import "./index.css";
 

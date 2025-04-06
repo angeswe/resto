@@ -9,15 +9,15 @@ import { ArrowLeftIcon } from '@heroicons/react/24/solid';
 import { ClipboardIcon } from '@heroicons/react/24/outline';
 import { METHOD_STATUS_CODES } from '../../types/http';
 import { API_URLS } from '../../config/api';
-import { useAppContext } from '../../contexts/AppContextWithTanstack';
 import { useEndpoint } from '../../hooks/queries/useEndpointQueries';
+import { useAppContext } from '../../hooks/useAppContext';
 
 interface EndpointDocsProps {
   endpoint?: {
     id: string;
     path: string;
     method: string;
-    schemaDefinition: string | Record<string, any>;
+    schemaDefinition: string | Record<string, unknown>;
     count: number;
     requireAuth: boolean;
     apiKeys: string[];
@@ -84,16 +84,16 @@ const EndpointDocs: React.FC<EndpointDocsProps> = (props) => {
     ? JSON.parse(endpoint.schemaDefinition)
     : endpoint.schemaDefinition;
 
-  // Now parsedSchema is guaranteed to be Record<string, any>
-  const schema: Record<string, any> = parsedSchema;
+  // Now parsedSchema is guaranteed to be Record<string, unknown>
+  const schema: Record<string, unknown> = parsedSchema;
 
   // Create an example response by replacing schema placeholders with realistic values
-  const generateExampleValue = (schema: Record<string, any>): Record<string, any> => {
+  const generateExampleValue = (schema: Record<string, unknown>): Record<string, unknown> => {
     if (typeof schema === 'string') {
       return { value: schema };
     }
 
-    const result: Record<string, any> = {};
+    const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(schema)) {
       if (typeof value === 'string' && value.startsWith('(random:')) {
         const type = value.match(/^\(random:(\w+)\)$/)?.[1] || 'string';
@@ -193,10 +193,10 @@ const EndpointDocs: React.FC<EndpointDocsProps> = (props) => {
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">
             <span className={`px-2 py-1 text-sm font-medium rounded mr-2 ${endpoint.method === 'GET' ? 'bg-green-100 text-green-800' :
-                endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800' :
-                  endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-800' :
-                    endpoint.method === 'DELETE' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
+              endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800' :
+                endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-800' :
+                  endpoint.method === 'DELETE' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
               }`}>
               {endpoint.method}
             </span>
