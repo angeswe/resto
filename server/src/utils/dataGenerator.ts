@@ -93,7 +93,7 @@ export class DataGenerator {
     return result;
   }
 
-  static generate(schema: Schema | string, count: number = 1): object[] {
+  static generate(schema: Schema | string, count = 1): object[] {
     try {
       // Parse schema if it's a string
       const parsedSchema = typeof schema === 'string' 
@@ -116,7 +116,7 @@ export class DataGenerator {
     }
   }
 
-  static paginate(data: any[], page: number = 1, limit: number = 10): { data: any[], total: number, page: number, totalPages: number } {
+  static paginate(data: any[], page = 1, limit = 10): { data: any[], total: number, page: number, totalPages: number } {
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
     const total = data.length;

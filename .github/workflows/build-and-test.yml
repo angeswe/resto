@@ -1,0 +1,60 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Setup MongoDB
+      uses: supercharge/mongodb-github-action@1.10.0
+      with:
+        mongodb-version: '6.0'
+    
+    # Server build and test
+    - name: Install server dependencies
+      working-directory: ./server
+      run: npm ci
+    
+    - name: Lint server
+      working-directory: ./server
+      run: npm run lint
+    
+    - name: Build server
+      working-directory: ./server
+      run: npm run build
+    
+    - name: Test server
+      working-directory: ./server
+      run: npm test
+    
+    # Client build and test
+    - name: Install client dependencies
+      working-directory: ./client
+      run: npm ci
+    
+    - name: Lint client
+      working-directory: ./client
+      run: npm run lint
+    
+    - name: Build client
+      working-directory: ./client
+      run: npm run build
+    

@@ -35,4 +35,6 @@ pids
 Thumbs.db
 client/src/styles/tailwind.css
 .windsurfrules
-#let's go through /home/glow/code/resto/client/src and see if we can improve state management and best practices, you are allowed to refactor but not change logic in the components and remove data inputs that we are using as of now, do not make changes like removing the tabs in the projects components.
+dist/
+/server/dist
+/client/dist

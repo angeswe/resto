@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 
 // Mock mongoose to avoid actual database connections
 vi.mock('mongoose', async () => {
-  const actual = await vi.importActual('mongoose');
+  const actual = await vi.importActual('mongoose') as Record<string, unknown>;
   return {
     ...actual,
     connect: vi.fn().mockResolvedValue(undefined),

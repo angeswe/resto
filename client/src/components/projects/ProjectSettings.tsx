@@ -305,8 +305,7 @@ const ProjectSettings: React.FC = () => {
           </Card>
         </Tab>
 
-        <Tab key="danger" title={<div className="flex items-center space-x-2"><DeleteIcon /><span>Danger Zone</span>
-        </div>}>
+        <Tab key="danger" title={<div className="flex items-center space-x-2"><DeleteIcon /><span>Danger Zone</span></div>}>
           <ProjectDangerZone
             onDelete={handleDelete}
             isDeleting={deleteProjectMutation.isPending}

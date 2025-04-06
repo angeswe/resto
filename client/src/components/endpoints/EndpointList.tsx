@@ -152,7 +152,7 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
             method: 'GET' as EndpointMethod,
             schemaDefinition: project?.defaultSchema || DEFAULT_SCHEMA,
             count: 10,
-            supportPagination: true,
+            //supportPagination: true,
             apiKeys: [],
             delay: 0,
             responseType: 'list' as ResponseType,
