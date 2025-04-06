@@ -3,8 +3,11 @@ import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { dracula } from '@uiw/codemirror-theme-dracula';
 import { githubLight } from '@uiw/codemirror-theme-github';
-import { useAppContext } from '../contexts/AppContext';
+import { useAppContext } from '../contexts/AppContextWithTanstack';
 
+/**
+ * Documentation component for the application
+ */
 const Docs: React.FC = () => {
   const { theme } = useAppContext();
   const exampleSchema = `{
@@ -32,7 +35,7 @@ const Docs: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-6">Documentation</h1>
-      
+
       <div className="space-y-8">
         <section>
           <h2 className="text-2xl font-semibold mb-4">Getting Started</h2>
@@ -140,17 +143,21 @@ const Docs: React.FC = () => {
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold mb-4">Pagination</h2>
+          <h2 className="text-2xl font-semibold mb-4"><s>Pagination </s>(not implemented yet)</h2>
           <p className="mb-4">
-            When your endpoint returns multiple items, you can use pagination by adding query parameters:
+            <s>When your endpoint returns multiple items, you can use pagination by adding query parameters:</s>
           </p>
           <ul className="list-disc list-inside ml-4 space-y-2 mb-4">
-            <li>page: The page number (default: 1)</li>
-            <li>limit: Number of items per page (default: 10)</li>
+            <s><li>page: The page number (default: 1)</li></s>
+            <s><li>limit: Number of items per page (default: 10)</li></s>
           </ul>
           <pre className="bg-card p-4 rounded-lg overflow-x-auto mb-4">
-            <code className="text-sm">http://localhost:3001/api/mock/:projectId/users?page=2&limit=20</code>
+            <code className="text-sm"><s>http://localhost:3001/api/mock/:projectId/users?page=2&limit=20</s></code>
           </pre>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">Response</h2>
           <p className="mb-4">
             The response will be an array of items based on your schema:
           </p>

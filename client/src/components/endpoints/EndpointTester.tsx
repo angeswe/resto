@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import SchemaEditor from '../projects/SchemaEditor';
-import { API_URLS } from '../../config/api';
-import { useAppContext } from '../../contexts/AppContext';
+import { useTestEndpoint } from '../../hooks/queries/useEndpointQueries';
+import { useAppContext } from '../../contexts/AppContextWithTanstack';
 
 interface EndpointTesterProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ interface EndpointTesterProps {
     method: string;
     schemaDefinition: string | Record<string, any>;
     count: number;
-    supportPagination: boolean;
+    //supportPagination: boolean;
     requireAuth: boolean;
     apiKeys: string[];
     delay: number;
@@ -31,6 +31,9 @@ interface ResponseInfo {
   message: string | null;
 }
 
+/**
+ * Component for testing endpoints with live requests
+ */
 const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoint, projectId }) => {
   const { theme } = useAppContext();
   const [requestBody, setRequestBody] = useState<Record<string, any>>(
@@ -40,15 +43,22 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
   );
   const [response, setResponse] = useState<ResponseInfo | null>(null);
   const [error, setError] = useState<string>('');
-  const [loading, setLoading] = useState(false);
 
+  // Use the TanStack Query mutation hook for testing endpoints
+  const testEndpointMutation = useTestEndpoint(projectId);
+  const loading = testEndpointMutation.isPending;
+
+  // Reset state when the modal opens with new endpoint data
   useEffect(() => {
     if (isOpen && endpoint.schemaDefinition) {
-      setRequestBody(
-        typeof endpoint.schemaDefinition === 'string'
-          ? JSON.parse(endpoint.schemaDefinition)
-          : endpoint.schemaDefinition
-      );
+      // Parse schema definition if it's a string
+      const parsedSchema = typeof endpoint.schemaDefinition === 'string'
+        ? JSON.parse(endpoint.schemaDefinition)
+        : endpoint.schemaDefinition;
+
+      setRequestBody(parsedSchema);
+
+      // Automatically run the test when the modal opens
       handleTest();
     }
   }, [isOpen, endpoint.schemaDefinition]);
@@ -57,73 +67,52 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
     try {
       setError('');
       setResponse(null);
-      setLoading(true);
 
-      // Use the same backend URL as the rest of the application
-      const baseUrl = API_URLS.base;
-      let url = `${baseUrl}/mock/${projectId}${endpoint.path}`;
-
-      // Only append parameter path for single-item endpoints
+      // Build the path with parameter for single-item endpoints
+      let path = endpoint.path;
       if (endpoint.responseType === 'single') {
-        url += `/${endpoint.parameterPath}`;
+        path += `/${endpoint.parameterPath}`;
         // For GET requests, replace the parameter with a test value
         if (endpoint.method === 'GET') {
-          url = url.replace(endpoint.parameterPath, '123');
+          path = path.replace(endpoint.parameterPath, '123');
         }
       }
 
-      console.log('Testing endpoint:', {
-        url,
+      // Check if authentication is required but no API key is available
+      if (endpoint.requireAuth && (!endpoint.apiKeys || endpoint.apiKeys.length === 0)) {
+        setError('This endpoint requires authentication, but no API key is available.');
+        return;
+      }
+
+      // Use the mutation hook to test the endpoint
+      const result = await testEndpointMutation.mutateAsync({
+        path,
         method: endpoint.method,
-        path: endpoint.path,
-        body: requestBody
+        body: (endpoint.method === 'POST' || endpoint.method === 'PUT') ? requestBody : null,
+        requireAuth: endpoint.requireAuth,
+        apiKey: endpoint.apiKeys && endpoint.apiKeys.length > 0 ? endpoint.apiKeys[0] : ''
       });
 
-      const fetchResponse = await fetch(url, {
-        method: endpoint.method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          ...(endpoint.requireAuth && endpoint.apiKeys.length > 0
-            ? { 'X-API-Key': endpoint.apiKeys[0] }
-            : {})
-        },
-        ...(endpoint.method === 'POST' || endpoint.method === 'PUT' ? {
-          body: JSON.stringify(requestBody)
-        } : {})
-      });
-
-      const data = await fetchResponse.json();
-
-      // Ensure we always get a plain object
-      const parsedData = typeof data === 'string'
-        ? JSON.parse(data)
-        : data;
-
-      // If the parsed data has a data property, use that
-      const finalData = parsedData.data || parsedData;
-
-      // If the data is still a string, try to parse it
-      const normalizedData = typeof finalData === 'string'
-        ? JSON.parse(finalData)
-        : finalData;
+      // Process the response data
+      const normalizedData = typeof result === 'string'
+        ? JSON.parse(result)
+        : result;
 
       // Final fallback - handle primitive values
       const finalResponseData = typeof normalizedData === 'object' && normalizedData !== null
         ? normalizedData
         : { value: String(normalizedData) };
 
+      // Set the response for display
       setResponse({
-        status: fetchResponse.status,
-        statusText: fetchResponse.statusText,
+        status: 200, // Default success status
+        statusText: 'OK',
         data: finalResponseData,
-        message: fetchResponse.headers.get('X-Status-Message')
+        message: null
       });
     } catch (err) {
-      console.error('Test request failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to test endpoint');
-    } finally {
-      setLoading(false);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to test endpoint';
+      setError(errorMessage);
     }
   };
 
@@ -152,6 +141,17 @@ const EndpointTester: React.FC<EndpointTesterProps> = ({ isOpen, onClose, endpoi
             </div>
           </div>
         )}
+
+        {/* Test Button */}
+        {/* <div className="flex justify-end">
+          <Button
+            color="primary"
+            isLoading={loading}
+            onPress={handleTest}
+          >
+            {loading ? 'Testing...' : 'Test Endpoint'}
+          </Button>
+        </div> */}
 
         {/* Response or Error */}
         {(response || error || loading) && (

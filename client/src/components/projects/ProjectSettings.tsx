@@ -12,14 +12,18 @@ import {
   Tab
 } from '@heroui/react';
 import EndpointList from '../endpoints/EndpointList';
-import { projectsApi } from '../../utils/api';
 import { ProjectData } from '../../types/project';
-import { useAppContext } from '../../contexts/AppContext';
+import { useAppContext } from '../../contexts/AppContextWithTanstack';
 import { useTabContext } from '../../contexts/TabContext';
 import ApiKeyManager from './ApiKeyManager';
 import SchemaEditor from './SchemaEditor';
 import ProjectDangerZone from './ProjectDangerZone';
+import { useProject, useUpdateProject, useDeleteProject } from '../../hooks/queries/useProjectQueries';
+import { DEFAULT_SCHEMA } from '../../types/schema';
 
+/**
+ * Form data interface for project settings
+ */
 interface FormData {
   name: string;
   description: string;
@@ -29,22 +33,30 @@ interface FormData {
   apiKeys: string[];
 }
 
-const defaultJsonSchema = {
-  id: "(random:uuid)",
-  name: "(random:name)",
-  email: "(random:email)",
-  createdAt: "(random:datetime)"
-};
-
+/**
+ * Component for managing project settings, endpoints, and danger zone actions
+ */
 const ProjectSettings: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { theme, updateProject, deleteProject } = useAppContext();
+  const { theme } = useAppContext();
   const { activeTab, setActiveTab } = useTabContext();
+  
+  // TanStack Query hooks
+  const { 
+    data: project, 
+    isLoading, 
+    isError, 
+    error 
+  } = useProject(id || '');
+  
+  const updateProjectMutation = useUpdateProject(id || '');
+  const deleteProjectMutation = useDeleteProject();
+
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
-    defaultSchema: JSON.stringify(defaultJsonSchema, null, 2),
+    defaultSchema: JSON.stringify(DEFAULT_SCHEMA, null, 2),
     defaultCount: '10',
     requireAuth: false,
     apiKeys: ['']
@@ -52,44 +64,42 @@ const ProjectSettings: React.FC = () => {
   const [originalData, setOriginalData] = useState<FormData | null>(null);
   const [isValidJson, setIsValidJson] = useState(true);
 
+  // Initialize form data when project is loaded
   useEffect(() => {
-    const fetchProject = async () => {
-      try {
-        if (!id) {
-          toast.error('Project ID is required');
-          navigate('/');
-          return;
-        }
+    if (project) {
+      // If schema is an object, convert to string for display
+      // If it's already a string, use it directly
+      const schemaValue = typeof project.defaultSchema === 'object' 
+        ? JSON.stringify(project.defaultSchema, null, 2)
+        : typeof project.defaultSchema === 'string'
+          ? project.defaultSchema
+          : JSON.stringify(DEFAULT_SCHEMA, null, 2);
+      
+      const formattedData = {
+        name: project.name || '',
+        description: project.description || '',
+        defaultSchema: schemaValue,
+        defaultCount: (project.defaultCount || 10).toString(),
+        requireAuth: project.requireAuth || false,
+        apiKeys: project.apiKeys?.length ? project.apiKeys : ['']
+      };
 
-        const data = await projectsApi.getProject(id);
-        if (!data) {
-          toast.error('Failed to load project');
-          navigate('/');
-          return;
-        }
+      setFormData(formattedData);
+      setOriginalData(formattedData);
+    }
+  }, [project]);
 
-        const formattedData = {
-          name: data.name || '',
-          description: data.description || '',
-          defaultSchema: typeof data.defaultSchema === 'object'
-            ? JSON.stringify(data.defaultSchema, null, 2)
-            : JSON.stringify(defaultJsonSchema, null, 2),
-          defaultCount: (data.defaultCount || 10).toString(),
-          requireAuth: data.requireAuth || false,
-          apiKeys: data.apiKeys?.length ? data.apiKeys : ['']
-        };
+  // Handle loading and error states
+  if (isLoading) {
+    return <div className="p-6 text-center">Loading project settings...</div>;
+  }
 
-        setFormData(formattedData);
-        setOriginalData(formattedData);
-      } catch (error) {
-        console.error('Error fetching project:', error);
-        toast.error('Failed to load project');
-        navigate('/');
-      }
-    };
-
-    fetchProject();
-  }, [id, navigate]);
+  if (isError || !id) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to load project';
+    toast.error(errorMessage);
+    navigate('/');
+    return null;
+  }
 
   const hasUnsavedChanges = () => {
     if (!originalData) return false;
@@ -157,26 +167,30 @@ const ProjectSettings: React.FC = () => {
     if (!id) return;
 
     try {
-      let defaultSchemaObj;
+      // Parse the schema string to an object
+      let schemaObj;
       try {
-        defaultSchemaObj = JSON.parse(formData.defaultSchema);
+        schemaObj = JSON.parse(formData.defaultSchema);
       } catch (error) {
+        toast.error('Invalid JSON schema');
         return;
       }
 
       const projectData: ProjectData = {
         name: formData.name,
         description: formData.description,
-        defaultSchema: defaultSchemaObj,
+        defaultSchema: schemaObj,
         defaultCount: parseInt(formData.defaultCount, 10),
         requireAuth: formData.requireAuth,
         apiKeys: formData.apiKeys.filter(key => key.trim() !== '')
       };
 
-      await updateProject(id, projectData);
+      await updateProjectMutation.mutateAsync(projectData);
       setOriginalData(formData);
+      toast.success('Project updated successfully');
     } catch (error) {
       console.error('Error updating project:', error);
+      toast.error('Failed to update project');
     }
   };
 
@@ -187,10 +201,11 @@ const ProjectSettings: React.FC = () => {
 
     try {
       if (!id) return;
-      await deleteProject(id);
+      await deleteProjectMutation.mutateAsync(id);
       navigate('/');
     } catch (error) {
       console.error('Error deleting project:', error);
+      toast.error('Failed to delete project');
     }
   };
 
@@ -267,9 +282,10 @@ const ProjectSettings: React.FC = () => {
             <div className="flex justify-end">
               <Button
                 type="submit"
-                isDisabled={!hasUnsavedChanges()}
+                isDisabled={!hasUnsavedChanges() || updateProjectMutation.isPending}
+                isLoading={updateProjectMutation.isPending}
               >
-                Save Changes
+                {updateProjectMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </form>
@@ -284,7 +300,10 @@ const ProjectSettings: React.FC = () => {
         </Tab>
 
         <Tab key="danger" title="Danger Zone">
-          <ProjectDangerZone onDelete={handleDelete} />
+          <ProjectDangerZone 
+            onDelete={handleDelete} 
+            isDeleting={deleteProjectMutation.isPending}
+          />
         </Tab>
       </Tabs>
     </div>

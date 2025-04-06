@@ -2,20 +2,28 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Endpoint } from '../../types/project';
 
+/**
+ * Props for the EndpointCard component
+ */
 interface EndpointCardProps {
   endpoint: Endpoint;
   projectId: string;
   onTest: (endpoint: Endpoint) => void;
   onEdit: (endpoint: Endpoint) => void;
   onDelete: (endpoint: Endpoint) => void;
+  isDeleting?: boolean;
 }
 
+/**
+ * Component for displaying an endpoint card with actions
+ */
 const EndpointCard: React.FC<EndpointCardProps> = ({
   endpoint,
   projectId,
   onTest,
   onEdit,
   onDelete,
+  isDeleting = false,
 }) => {
   return (
     <div className="p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]">
@@ -54,20 +62,23 @@ const EndpointCard: React.FC<EndpointCardProps> = ({
           <button
             onClick={() => onTest(endpoint)}
             className="px-3 py-1 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors duration-200"
+            disabled={isDeleting}
           >
             Test
           </button>
           <button
             onClick={() => onEdit(endpoint)}
             className="px-3 py-1 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors duration-200"
+            disabled={isDeleting}
           >
             Edit
           </button>
           <button
             onClick={() => onDelete(endpoint)}
             className="px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
+            disabled={isDeleting}
           >
-            Delete
+            {isDeleting ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>

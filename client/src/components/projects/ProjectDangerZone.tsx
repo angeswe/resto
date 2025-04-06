@@ -1,12 +1,23 @@
 import React from 'react';
 import { Button, Card, CardBody } from '@heroui/react';
 
+/**
+ * Props for the ProjectDangerZone component
+ */
 interface ProjectDangerZoneProps {
   onDelete: () => Promise<void>;
+  isDeleting?: boolean;
   className?: string;
 }
 
-const ProjectDangerZone: React.FC<ProjectDangerZoneProps> = ({ onDelete, className }) => {
+/**
+ * Component for displaying dangerous project actions like deletion
+ */
+const ProjectDangerZone: React.FC<ProjectDangerZoneProps> = ({ 
+  onDelete, 
+  isDeleting = false, 
+  className 
+}) => {
   return (
     <Card className={className}>
       <CardBody>
@@ -21,8 +32,10 @@ const ProjectDangerZone: React.FC<ProjectDangerZoneProps> = ({ onDelete, classNa
             variant="ghost"
             className="text-red-600 hover:bg-red-100"
             onClick={onDelete}
+            isDisabled={isDeleting}
+            isLoading={isDeleting}
           >
-            Delete Project
+            {isDeleting ? 'Deleting...' : 'Delete Project'}
           </Button>
         </div>
       </CardBody>

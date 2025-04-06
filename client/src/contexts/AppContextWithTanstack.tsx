@@ -1,7 +1,13 @@
 import { createContext, useContext, useState, useEffect, FC, ReactNode } from "react";
-import { AppContextType } from "../types/project";
-import { useProjects } from "../hooks/useProjects";
-import { useEndpoints } from "../hooks/useEndpoints";
+
+/**
+ * Simplified AppContext type that focuses on UI state
+ * Data fetching and mutations are handled by TanStack Query hooks
+ */
+export interface AppContextType {
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
+}
 
 // Create context
 const AppContext = createContext<AppContextType | null>(null);
@@ -10,31 +16,12 @@ interface AppContextProviderProps {
   children: ReactNode;
 }
 
-// Context provider component
+/**
+ * Context provider component that manages application UI state
+ * This version is simplified as most data fetching is handled by TanStack Query
+ */
 export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) => {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-
-  // Initialize hooks
-  const {
-    projects,
-    loading: projectsLoading,
-    error: projectsError,
-    fetchProjects,
-    addProject,
-    updateProject,
-    deleteProject,
-  } = useProjects();
-
-  const {
-    loading: endpointsLoading,
-    error: endpointsError,
-    endpoints,
-    getEndpoint,
-    getEndpoints,
-    addEndpoint,
-    updateEndpoint,
-    deleteEndpoint,
-  } = useEndpoints();
 
   // Theme handling
   useEffect(() => {
@@ -47,28 +34,13 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
-  // Combine loading and error states
-  const isLoading = projectsLoading || endpointsLoading;
-  const error = projectsError || endpointsError;
-
+  // The context now only provides theme management
+  // All data fetching and mutations are handled by TanStack Query hooks
   return (
     <AppContext.Provider
       value={{
-        projects,
-        endpoints,
         theme,
         setTheme,
-        loading: isLoading,
-        error,
-        fetchProjects,
-        getEndpoint,
-        getEndpoints,
-        addProject,
-        updateProject,
-        deleteProject,
-        addEndpoint,
-        updateEndpoint,
-        deleteEndpoint,
       }}
     >
       {children}
@@ -76,6 +48,11 @@ export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) =>
   );
 };
 
+/**
+ * Hook to access the AppContext
+ * @returns The AppContext value
+ * @throws Error if used outside of AppContextProvider
+ */
 export const useAppContext = (): AppContextType => {
   const context = useContext(AppContext);
   if (context === null) {

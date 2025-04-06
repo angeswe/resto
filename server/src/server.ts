@@ -47,7 +47,7 @@ class Server {
   private setupRoutes() {
     // Swagger documentation
     this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-    
+
     // JSON endpoint for swagger spec
     this.app.get('/swagger.json', (req: Request, res: Response) => {
       res.setHeader('Content-Type', 'application/json');
@@ -71,7 +71,7 @@ class Server {
       next();
     });
     mockRouter.use('/:projectId/*', mockApiRoutes);
-    this.app.use('/mock', mockRouter);
+    this.app.use('/api/mock', mockRouter);
 
     // Health check route
     this.app.get('/health', (req, res) => {

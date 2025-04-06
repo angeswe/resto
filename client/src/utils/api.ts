@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
-import { Project, ProjectData, Endpoint } from "../types/project";
+import { Project, ProjectData, Endpoint, EndpointData } from "../types/project";
+import { ApiResponse, MockRequestOptions } from "../types/api";
 import { API_URLS } from '../config/api';
 
 const api: AxiosInstance = axios.create({
@@ -8,12 +9,6 @@ const api: AxiosInstance = axios.create({
     "Content-Type": "application/json",
   },
 });
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-}
 
 // Projects API
 export const projectsApi = {
@@ -105,7 +100,7 @@ export const endpointsApi = {
   },
 
   // Create a new endpoint
-  createEndpoint: async (projectId: string, endpointData: any): Promise<Endpoint> => {
+  createEndpoint: async (projectId: string, endpointData: EndpointData): Promise<Endpoint> => {
     try {
       const response: AxiosResponse<ApiResponse<Endpoint>> = await api.post(`/projects/${projectId}/endpoints`, endpointData);
       return response.data.data;
@@ -116,7 +111,7 @@ export const endpointsApi = {
   },
 
   // Update an endpoint
-  updateEndpoint: async (endpointId: string, endpointData: any): Promise<Endpoint> => {
+  updateEndpoint: async (endpointId: string, endpointData: EndpointData): Promise<Endpoint> => {
     try {
       const response: AxiosResponse<ApiResponse<Endpoint>> = await api.put(`/endpoints/${endpointId}`, endpointData);
       return response.data.data;
@@ -140,19 +135,20 @@ export const endpointsApi = {
 // Mock API utility to make requests to the generated endpoints
 export const mockApi = {
   // Make a request to a mock endpoint
-  request: async (
+  request: async <TResponse = unknown>(
     projectId: string,
     path: string,
-    { method = "GET", data = null, headers = {} }: { method?: string; data?: any; headers?: Record<string, string> } = {}
-  ): Promise<any> => {
+    options: MockRequestOptions = {}
+  ): Promise<TResponse> => {
     try {
-      const response = await api.request({
+      const { method = "GET", data = null, headers = {} } = options;
+      const response = await api.request<ApiResponse<TResponse>>({
         method,
         url: `/mock/${projectId}${path.startsWith('/') ? path : '/' + path}`,
         data,
         headers
       });
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('Mock API request failed:', error);
       throw error;

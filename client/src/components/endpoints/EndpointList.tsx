@@ -1,66 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { Endpoint, Project, EndpointMethod, ResponseType } from '../../types/project';
-import { toast } from 'react-toastify';
+import React, { useState } from 'react';
+import { Endpoint, EndpointMethod, ResponseType } from '../../types/project';
 import EndpointTester from './EndpointTester';
 import EndpointCard from './EndpointCard';
-import { endpointsApi, projectsApi } from '../../utils/api';
 import EndpointModal from './EndpointModal';
-import { Button, Card, CardBody, Link } from '@heroui/react';
+import { Button, Card, CardBody } from '@heroui/react';
 import { FolderIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { useEndpoints, useDeleteEndpoint } from '../../hooks/queries/useEndpointQueries';
+import { useProject } from '../../hooks/queries/useProjectQueries';
+import { DEFAULT_SCHEMA } from '../../types/schema';
 
+/**
+ * Props for the EndpointList component
+ */
 interface EndpointListProps {
   projectId: string;
 }
 
+/**
+ * Component for displaying and managing a list of endpoints for a project
+ */
 const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
-  const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
-  const [loading, setLoading] = useState(true);
+  // TanStack Query hooks
+  const {
+    data: endpoints = [],
+    isLoading,
+    isError,
+    error,
+    refetch: refetchEndpoints
+  } = useEndpoints(projectId);
+
+  const { data: project } = useProject(projectId);
+  const deleteEndpointMutation = useDeleteEndpoint(projectId);
+
+  // Local state
   const [showTestModal, setShowTestModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedEndpoint, setSelectedEndpoint] = useState<Endpoint | null>(null);
-  const [project, setProject] = useState<Project | null>(null);
-
-  const fetchEndpoints = async () => {
-    try {
-      setLoading(true);
-      const data = await endpointsApi.getEndpoints(projectId);
-      // Parse schemaDefinition for each endpoint
-      const parsedEndpoints = data.map(endpoint => ({
-        ...endpoint,
-        schemaDefinition: typeof endpoint.schemaDefinition === 'string'
-          ? JSON.parse(endpoint.schemaDefinition)
-          : endpoint.schemaDefinition
-      }));
-      setEndpoints(parsedEndpoints);
-    } catch (error) {
-      console.error('Failed to fetch endpoints:', error);
-      toast.error('Failed to fetch endpoints');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchEndpoints();
-  }, [projectId]);
-
-  useEffect(() => {
-    const fetchProject = async () => {
-      try {
-        const data = await projectsApi.getProject(projectId);
-        setProject({
-          ...data,
-          defaultSchema: typeof data.defaultSchema === 'string'
-            ? JSON.parse(data.defaultSchema)
-            : data.defaultSchema
-        });
-      } catch (error) {
-        console.error('Failed to fetch project:', error);
-      }
-    };
-    fetchProject();
-  }, [projectId]);
 
   const handleEditClick = (endpoint: Endpoint) => {
     setSelectedEndpoint(endpoint);
@@ -78,8 +54,7 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
     }
 
     try {
-      await endpointsApi.deleteEndpoint(endpoint.id);
-      await fetchEndpoints();
+      await deleteEndpointMutation.mutateAsync(endpoint.id);
     } catch (error) {
       console.error('Failed to delete endpoint:', error);
     }
@@ -89,8 +64,18 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
     setShowCreateModal(true);
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
+  if (isLoading) {
+    return <div className="p-6 text-center">Loading endpoints...</div>;
+  }
+
+  if (isError) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch endpoints';
+    return (
+      <div className="p-6 text-center">
+        <p className="text-red-500 mb-4">{errorMessage}</p>
+        <Button onPress={() => refetchEndpoints()}>Try Again</Button>
+      </div>
+    );
   }
 
   return (
@@ -135,6 +120,7 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
               onTest={handleTestClick}
               onEdit={handleEditClick}
               onDelete={handleDelete}
+              isDeleting={deleteEndpointMutation.isPending && deleteEndpointMutation.variables === endpoint.id}
             />
           ))}
         </div>
@@ -155,14 +141,16 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
       {showCreateModal && (
         <EndpointModal
           isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => {
+            setShowCreateModal(false);
+          }}
           projectId={projectId}
-          onUpdate={fetchEndpoints}
+          onUpdate={() => refetchEndpoints()}
           initialData={{
             requireAuth: project?.requireAuth || false,
             path: '',
             method: 'GET' as EndpointMethod,
-            schemaDefinition: project?.defaultSchema || '',
+            schemaDefinition: project?.defaultSchema || DEFAULT_SCHEMA,
             count: 10,
             supportPagination: true,
             apiKeys: [],
@@ -182,7 +170,7 @@ const EndpointList: React.FC<EndpointListProps> = ({ projectId }) => {
             setSelectedEndpoint(null);
           }}
           projectId={projectId}
-          onUpdate={fetchEndpoints}
+          onUpdate={() => refetchEndpoints()}
           initialData={selectedEndpoint}
         />
       )}

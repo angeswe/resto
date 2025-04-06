@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { dracula } from '@uiw/codemirror-theme-dracula';
@@ -9,30 +9,75 @@ import { ArrowLeftIcon } from '@heroicons/react/24/solid';
 import { ClipboardIcon } from '@heroicons/react/24/outline';
 import { METHOD_STATUS_CODES } from '../../types/http';
 import { API_URLS } from '../../config/api';
-import { useAppContext } from '../../contexts/AppContext';
+import { useAppContext } from '../../contexts/AppContextWithTanstack';
+import { useEndpoint } from '../../hooks/queries/useEndpointQueries';
 
 interface EndpointDocsProps {
-  endpoint: {
+  endpoint?: {
     id: string;
     path: string;
     method: string;
     schemaDefinition: string | Record<string, any>;
     count: number;
-    supportPagination: boolean;
     requireAuth: boolean;
     apiKeys: string[];
     delay: number;
     responseType: string;
     parameterPath: string;
     responseHttpStatus: string;
-    projectId: string;
   };
-  projectId: string;
+  projectId?: string;
 }
 
-const EndpointDocs: React.FC<EndpointDocsProps> = ({ endpoint, projectId }) => {
+/**
+ * Component for displaying endpoint documentation
+ * Can be used standalone with endpoint prop or as a page with URL params
+ */
+const EndpointDocs: React.FC<EndpointDocsProps> = (props) => {
+  // Get parameters from URL if not provided as props
+  const { projectId: urlProjectId, endpointId } = useParams<{ projectId: string; endpointId: string }>();
+  const navigate = useNavigate();
+
+  // Use props or URL params
+  const projectId = props.projectId || urlProjectId;
+
+  // Use TanStack Query to fetch endpoint if not provided
+  const { data: fetchedEndpoint, isLoading } = useEndpoint(
+    endpointId || '',
+    projectId || ''
+  );
+
+  // Use provided endpoint or fetched endpoint
+  const endpoint = props.endpoint || fetchedEndpoint;
+
+  // Get theme from context
   const { theme } = useAppContext();
   const [copied, setCopied] = useState(false);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // If no endpoint is available, show error
+  if (!endpoint || !projectId) {
+    return (
+      <div className="p-8 text-center">
+        <h2 className="text-xl font-semibold mb-4">Endpoint not found</h2>
+        <p className="mb-4">The endpoint you're looking for doesn't exist or you don't have access to it.</p>
+        <button
+          onClick={() => navigate(`/projects/${projectId}`)}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Back to Project
+        </button>
+      </div>
+    );
+  }
 
   // Parse schema if it's a string
   const parsedSchema = typeof endpoint.schemaDefinition === 'string'
@@ -91,205 +136,164 @@ const EndpointDocs: React.FC<EndpointDocsProps> = ({ endpoint, projectId }) => {
     return result;
   };
 
-  const responseExample = endpoint.supportPagination
+  const responseExample = endpoint.responseType === 'list'
     ? {
-      data: generateExampleValue(schema),
+      data: Array.from({ length: Math.min(3, endpoint.count) }, () => generateExampleValue(schema)),
       total: endpoint.count,
       page: 1,
       totalPages: Math.ceil(endpoint.count / 10)
     }
     : generateExampleValue(schema);
 
-  // Convert schema to string for display
-  const schemaString = typeof endpoint.schemaDefinition === 'string'
-    ? endpoint.schemaDefinition
-    : JSON.stringify(endpoint.schemaDefinition, null, 2);
+  // Format the example response for display
+  const formattedResponse = JSON.stringify(responseExample, null, 2);
 
-  const fullPath = API_URLS.getMockUrl(endpoint.projectId, endpoint.path);
+  // Get the base URL for the mock API
+  const baseUrl = API_URLS.base;
 
+  // Build the full URL for the endpoint
+  let fullUrl = `${baseUrl}/api/mock/${projectId}${endpoint.path}`;
+  if (endpoint.responseType === 'single') {
+    fullUrl += `/${endpoint.parameterPath}`;
+  }
+
+  // Copy URL to clipboard
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(fullPath).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    navigator.clipboard.writeText(fullUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
+  // Get the status code text
+  const statusCode = endpoint.responseHttpStatus || '200';
+  let statusText = 'OK';
+
+  // Find the status text for the given method and status code
+  if (endpoint.method in METHOD_STATUS_CODES) {
+    const methodStatusCodes = METHOD_STATUS_CODES[endpoint.method as keyof typeof METHOD_STATUS_CODES];
+    const statusCodeObj = methodStatusCodes.find(s => s.code === statusCode);
+    if (statusCodeObj) {
+      statusText = statusCodeObj.text;
+    }
+  }
+
   return (
-    <div className="space-y-8 p-6">
-      <div className="flex items-center gap-4">
+    <div className="container mx-auto p-6 max-w-5xl">
+      <div className="mb-6">
         <Link
           to={`/projects/${projectId}/settings`}
-          className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]"
+          className="inline-flex items-center text-blue-500 hover:text-blue-700"
         >
-          <ArrowLeftIcon className="h-4 w-4" />
-          Back to Project Settings
+          <ArrowLeftIcon className="h-4 w-4 mr-1" />
+          Back to Project
         </Link>
       </div>
 
-      <div>
-        <h2 className="text-xl font-semibold mb-4 text-[var(--text-primary)]">API Documentation</h2>
+      <div className="bg-[var(--bg-secondary)] p-6 rounded-lg border border-[var(--border-color)] mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+            <span className={`px-2 py-1 text-sm font-medium rounded mr-2 ${endpoint.method === 'GET' ? 'bg-green-100 text-green-800' :
+                endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800' :
+                  endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-800' :
+                    endpoint.method === 'DELETE' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+              }`}>
+              {endpoint.method}
+            </span>
+            {endpoint.path}
+          </h1>
+        </div>
 
-        <div className="space-y-6">
+        <div className="mb-6">
+          <div className="flex items-center space-x-2 mb-2">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Endpoint URL</h2>
+          </div>
+          <div className="flex items-center">
+            <div className="flex-1 bg-[var(--bg-tertiary)] p-3 rounded-l-md border border-[var(--border-color)] font-mono text-sm overflow-x-auto">
+              {fullUrl}
+            </div>
+            <button
+              onClick={copyToClipboard}
+              className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-r-md"
+              title="Copy to clipboard"
+            >
+              <ClipboardIcon className="h-5 w-5" />
+            </button>
+          </div>
+          {copied && (
+            <div className="mt-2 text-sm text-green-600">Copied to clipboard!</div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h3 className="text-lg font-medium text-[var(--text-primary)]">Full URL</h3>
-            <div className="mt-2 flex items-center gap-2 p-3 bg-[var(--bg-secondary)] rounded-md border border-[var(--border-color)]">
-              <a href={fullPath} target="_blank" rel="noopener noreferrer" className="font-mono text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
-                {fullPath}
-              </a>
-              <button
-                onClick={copyToClipboard}
-                className="p-1 hover:bg-[var(--bg-hover)] rounded transition-colors"
-                title="Copy to clipboard"
-              >
-                <ClipboardIcon className="h-4 w-4 text-[var(--text-secondary)]" />
-              </button>
-              {copied && (
-                <span className="text-xs text-green-500 dark:text-green-400">Copied!</span>
+            <h2 className="text-lg font-semibold mb-2 text-[var(--text-primary)]">Details</h2>
+            <div className="bg-[var(--bg-tertiary)] p-4 rounded-md border border-[var(--border-color)]">
+              <div className="mb-4">
+                <h3 className="font-medium text-[var(--text-primary)]">Response Status</h3>
+                <div className="mt-1 text-sm text-[var(--text-secondary)]">
+                  <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800">
+                    {statusCode} {statusText}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <h3 className="font-medium text-[var(--text-primary)]">Response Type</h3>
+                <div className="mt-1 text-sm text-[var(--text-secondary)]">
+                  {endpoint.responseType === 'list' ? 'List of items' : 'Single item'}
+                </div>
+              </div>
+
+              {endpoint.requireAuth && (
+                <div className="mb-4">
+                  <h3 className="font-medium text-[var(--text-primary)]">Authentication</h3>
+                  <div className="mt-1 text-sm text-[var(--text-secondary)]">
+                    Required (API Key)
+                  </div>
+                </div>
+              )}
+
+              {endpoint.delay > 0 && (
+                <div>
+                  <h3 className="font-medium text-[var(--text-primary)]">Response Delay</h3>
+                  <div className="mt-1 text-sm text-[var(--text-secondary)]">
+                    {endpoint.delay} ms
+                  </div>
+                </div>
               )}
             </div>
           </div>
 
           <div>
-            <h3 className="text-lg font-medium text-[var(--text-primary)]">Endpoint Details</h3>
-            <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-              <div>
-                <dt className="text-sm font-medium text-[var(--text-secondary)]">Method</dt>
-                <dd className="mt-1 text-sm text-[var(--text-primary)]">{endpoint.method}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-[var(--text-secondary)]">Path</dt>
-                <dd className="mt-1 text-sm text-[var(--text-primary)] font-mono">{endpoint.path}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-[var(--text-secondary)]">Items Count</dt>
-                <dd className="mt-1 text-sm text-[var(--text-primary)]">{endpoint.count}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-[var(--text-secondary)]">Status Code</dt>
-                <dd className="mt-1 text-sm text-[var(--text-primary)]">
-                  <span className="font-mono">{endpoint.responseHttpStatus}</span> ({METHOD_STATUS_CODES[endpoint.method as keyof typeof METHOD_STATUS_CODES].find(s => s.code === endpoint.responseHttpStatus)?.text})
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-[var(--text-secondary)]">Response Delay</dt>
-                <dd className="mt-1 text-sm text-[var(--text-primary)]">{endpoint.delay}ms</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-[var(--text-secondary)]">Pagination</dt>
-                <dd className="mt-1 text-sm text-[var(--text-primary)]">
-                  {endpoint.supportPagination ? 'Enabled' : 'Disabled'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-[var(--text-secondary)]">Authentication</dt>
-                <dd className="mt-1 text-sm text-[var(--text-primary)]">
-                  {endpoint.requireAuth ? 'Required (API Key)' : 'Not Required'}
-                </dd>
-              </div>
-            </dl>
-          </div>
-
-          {endpoint.supportPagination && (
-            <div>
-              <h3 className="text-lg font-medium mb-2 text-[var(--text-primary)]">Query Parameters</h3>
-              <div className="overflow-hidden border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)]">
-                <table className="min-w-full divide-y divide-[var(--border-color)]">
-                  <thead>
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Parameter
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Description
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--border-color)]">
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
-                        page
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
-                        number
-                      </td>
-                      <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">
-                        Page number (default: 1)
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--text-primary)]">
-                        limit
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
-                        number
-                      </td>
-                      <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">
-                        Items per page (default: 10, max: 100)
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {endpoint.requireAuth && (
-            <div>
-              <h3 className="text-lg font-medium mb-2 text-[var(--text-primary)]">Authentication</h3>
-              <p className="text-sm text-[var(--text-secondary)] mb-2">
-                This endpoint requires authentication. Include your API key in the request headers:
-              </p>
-              <div className="bg-[var(--bg-secondary)] rounded-md p-4 border border-[var(--border-color)]">
-                <code className="text-sm text-[var(--text-primary)]">
-                  X-API-Key: YOUR_API_KEY
-                </code>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium mb-2 text-[var(--text-primary)]">Schema Definition</h3>
-              <div className="space-y-2">
-                <p className="text-sm text-[var(--text-secondary)]">
-                  {endpoint.supportPagination ? 'Schema definition with pagination:' : 'Schema definition:'}
-                </p>
-                <div className="overflow-hidden border border-[var(--border-color)] rounded-lg">
-                  <CodeMirror
-                    value={schemaString}
-                    height="200px"
-                    extensions={[json()]}
-                    readOnly
-                    theme={theme === 'dark' ? dracula : githubLight}
-                    className="rounded-md"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-medium mb-2 text-[var(--text-primary)]">Example Response</h3>
-              <div className="space-y-2">
-                <p className="text-sm text-[var(--text-secondary)]">
-                  {endpoint.supportPagination ? 'Example response with pagination:' : 'Example response:'}
-                </p>
-                <div className="overflow-hidden border border-[var(--border-color)] rounded-lg">
-                  <CodeMirror
-                    value={JSON.stringify(responseExample, null, 2)}
-                    height="200px"
-                    extensions={[json()]}
-                    readOnly
-                    theme={theme === 'dark' ? dracula : githubLight}
-                    className="rounded-md"
-                  />
-                </div>
-              </div>
+            <h2 className="text-lg font-semibold mb-2 text-[var(--text-primary)]">Schema Definition</h2>
+            <div className="bg-[var(--bg-tertiary)] p-4 rounded-md border border-[var(--border-color)] h-full">
+              <CodeMirror
+                value={JSON.stringify(schema, null, 2)}
+                height="200px"
+                extensions={[json()]}
+                theme={theme === 'dark' ? dracula : githubLight}
+                editable={false}
+              />
             </div>
           </div>
+        </div>
 
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-2 text-[var(--text-primary)]">Example Response</h2>
+          <div className="bg-[var(--bg-tertiary)] p-4 rounded-md border border-[var(--border-color)]">
+            <CodeMirror
+              value={formattedResponse}
+              height="300px"
+              extensions={[json()]}
+              theme={theme === 'dark' ? dracula : githubLight}
+              editable={false}
+            />
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-2 text-[var(--text-primary)]">Code Examples</h2>
           <CodeExamples
             endpointId={endpoint.id}
             projectId={projectId}

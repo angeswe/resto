@@ -4,10 +4,13 @@ import { javascript } from '@codemirror/lang-javascript';
 import { dracula } from '@uiw/codemirror-theme-dracula';
 import { githubLight } from '@uiw/codemirror-theme-github';
 import { API_URLS } from '../../config/api';
-import { useAppContext } from '../../contexts/AppContext';
+import { useAppContext } from '../../contexts/AppContextWithTanstack';
 
+/**
+ * Component for displaying code examples for API endpoints
+ */
 interface CodeExamplesProps {
-  endpointId: string;
+  endpointId?: string; // Optional, not used in current implementation
   projectId: string;
   method: string;
   path: string;
@@ -17,7 +20,6 @@ interface CodeExamplesProps {
 }
 
 const CodeExamples: React.FC<CodeExamplesProps> = ({
-  endpointId,
   projectId,
   method,
   path,
@@ -26,22 +28,27 @@ const CodeExamples: React.FC<CodeExamplesProps> = ({
   apiKeys
 }) => {
   const { theme } = useAppContext();
-  const baseUrl = `${API_URLS.base}/projects/${projectId}/endpoints/${endpointId}`;
+  const baseUrl = `${API_URLS.base}/api/mock/${projectId}`;
   const authHeader = requireAuth && apiKeys.length > 0 
-    ? `\n  -H "Authorization: Bearer ${apiKeys[0]}"` 
+    ? `\n  -H "X-API-Key: ${apiKeys[0]}"` 
     : '';
 
-  const curlExample = `curl -X ${method} ${baseUrl}${path} \\
-  -H "Content-Type: application/json"${authHeader} \\
-  -d ${JSON.stringify(schemaDefinition, null, 2)}`;
+  // Only include request body for POST and PUT methods
+  const hasRequestBody = method === 'POST' || method === 'PUT';
+  const requestBodyParam = hasRequestBody 
+    ? `\n  -d '${JSON.stringify(schemaDefinition, null, 2)}'` 
+    : '';
+
+  const curlExample = `curl -X ${method} "${baseUrl}${path}" \\
+  -H "Content-Type: application/json"${authHeader}${requestBodyParam}`;
 
   const fetchExample = `fetch("${baseUrl}${path}", {
   method: "${method}",
   headers: {
     "Content-Type": "application/json"${requireAuth && apiKeys.length > 0 ? `,
-    "Authorization": "Bearer ${apiKeys[0]}"` : ''}
-  },
-  body: JSON.stringify(${JSON.stringify(schemaDefinition, null, 2).replace(/"([^"]+)":/g, '$1:')})
+    "X-API-Key": "${apiKeys[0]}"` : ''}
+  }${hasRequestBody ? `,
+  body: JSON.stringify(${JSON.stringify(schemaDefinition, null, 2).replace(/"([^"]+)":/g, '$1:')})` : ''}
 })
   .then(response => response.json())
   .then(data => console.log(data))
@@ -50,43 +57,52 @@ const CodeExamples: React.FC<CodeExamplesProps> = ({
   const axiosConfig = requireAuth && apiKeys.length > 0 
     ? `, {
     headers: {
-      "Authorization": "Bearer ${apiKeys[0]}"
+      "X-API-Key": "${apiKeys[0]}"
     }
-  }`
+  }` 
     : '';
 
-  const axiosExample = `axios.${method.toLowerCase()}("${baseUrl}${path}", ${JSON.stringify(schemaDefinition, null, 2).replace(/"([^"]+)":/g, '$1:')}${axiosConfig})
-  .then(response => console.log(response.data))
-  .catch(error => console.error('Error:', error));`;
+  const axiosExample = `import axios from 'axios';
+
+axios.${method.toLowerCase()}("${baseUrl}${path}"${hasRequestBody ? `, ${JSON.stringify(schemaDefinition, null, 2).replace(/"([^"]+)":/g, '$1:')}` : ''}${axiosConfig})
+  .then(response => {
+    console.log(response.data);
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });`;
 
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-medium mb-2">cURL</h3>
+        <h3 className="text-md font-medium mb-2 text-[var(--text-primary)]">cURL</h3>
         <CodeMirror
           value={curlExample}
-          theme={theme === 'dark' ? dracula : githubLight}
+          height="auto"
           extensions={[javascript()]}
+          theme={theme === 'dark' ? dracula : githubLight}
           editable={false}
         />
       </div>
-
+      
       <div>
-        <h3 className="text-sm font-medium mb-2">Fetch</h3>
+        <h3 className="text-md font-medium mb-2 text-[var(--text-primary)]">JavaScript (fetch)</h3>
         <CodeMirror
           value={fetchExample}
-          theme={theme === 'dark' ? dracula : githubLight}
+          height="auto"
           extensions={[javascript()]}
+          theme={theme === 'dark' ? dracula : githubLight}
           editable={false}
         />
       </div>
-
+      
       <div>
-        <h3 className="text-sm font-medium mb-2">Axios</h3>
+        <h3 className="text-md font-medium mb-2 text-[var(--text-primary)]">JavaScript (axios)</h3>
         <CodeMirror
           value={axiosExample}
-          theme={theme === 'dark' ? dracula : githubLight}
+          height="auto"
           extensions={[javascript()]}
+          theme={theme === 'dark' ? dracula : githubLight}
           editable={false}
         />
       </div>

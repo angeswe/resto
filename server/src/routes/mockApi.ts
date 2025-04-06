@@ -27,7 +27,7 @@ const router = express.Router();
  *         required: true
  *         schema:
  *           type: string
- *         description: The endpoint path to mock
+ *         description: The endpoint path to mock (name of the endpoint)
  *     responses:
  *       200:
  *         description: Mock response based on endpoint configuration
@@ -57,7 +57,7 @@ const router = express.Router();
  *         required: true
  *         schema:
  *           type: string
- *         description: The endpoint path to mock
+ *         description: The endpoint path to mock (name of the endpoint)
  *     requestBody:
  *       content:
  *         application/json:
@@ -93,7 +93,7 @@ const router = express.Router();
  *         required: true
  *         schema:
  *           type: string
- *         description: The endpoint path to mock
+ *         description: The endpoint path to mock (name of the endpoint)
  *     requestBody:
  *       content:
  *         application/json:
@@ -129,7 +129,7 @@ const router = express.Router();
  *         required: true
  *         schema:
  *           type: string
- *         description: The endpoint path to mock
+ *         description: The endpoint path to mock (name of the endpoint)
  *     responses:
  *       200:
  *         description: Mock response based on endpoint configuration
@@ -159,7 +159,7 @@ const router = express.Router();
  *         required: true
  *         schema:
  *           type: string
- *         description: The endpoint path to mock
+ *         description: The endpoint path to mock (name of the endpoint)
  *     requestBody:
  *       content:
  *         application/json:
@@ -216,7 +216,7 @@ function matchPathPattern(urlPath: string, endpointPath: string): { matches: boo
   if (urlParts.length === endpointParts.length) {
     const params: Record<string, string> = {};
     let matches = true;
-
+    console.log('Exact match check:', { urlParts, endpointParts });
     for (let i = 0; i < endpointParts.length; i++) {
       const endpointPart = endpointParts[i];
       const urlPart = urlParts[i];

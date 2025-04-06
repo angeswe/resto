@@ -1,31 +1,51 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { PlusIcon, FolderIcon } from "@heroicons/react/24/solid";
 import { Button, Card, CardBody } from "@heroui/react";
 import ProjectCard from "./ProjectCard";
 import Loading from "../common/Loading";
-import { useAppContext } from "../../contexts/AppContext";
+import { useProjects, useDeleteProject } from "../../hooks/queries/useProjectQueries";
 
+/**
+ * Displays a list of all projects with options to create and manage them
+ */
 const ProjectList = () => {
-  const { projects, loading, deleteProject, fetchProjects } = useAppContext();
-
-  // Fetch latest projects when component mounts
-  useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+  // Use TanStack Query hooks instead of AppContext
+  const { data: projects = [], isLoading, isError, error } = useProjects();
+  const deleteProjectMutation = useDeleteProject();
 
   // Sort projects by creation date (newest first)
-  const sortedProjects = projects ? [...projects].sort((a, b) =>
+  const sortedProjects = [...projects].sort((a, b) =>
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  ) : [];
+  );
 
   // Handle project deletion
   const handleDeleteProject = async (projectId: string) => {
-    await deleteProject(projectId);
+    await deleteProjectMutation.mutateAsync(projectId);
   };
 
-  if (loading) {
+  if (isLoading) {
     return <Loading message="Loading your projects..." />;
+  }
+
+  if (isError) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center py-12">
+          <h3 className="text-lg font-medium text-red-600 dark:text-red-400">Error loading projects</h3>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            {error instanceof Error ? error.message : 'An unexpected error occurred'}
+          </p>
+          <Button 
+            color="primary" 
+            variant="solid" 
+            className="mt-4"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (

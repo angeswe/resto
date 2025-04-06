@@ -274,7 +274,7 @@ router.post('/projects/:projectId/endpoints', async (req: Request, res: Response
       apiKeys: req.body.apiKeys || [],
       delay: req.body.delay || 0,
       responseType: req.body.responseType || 'list',
-      parameterPath: req.body.parameterPath || 'page'
+      parameterPath: req.body.parameterPath || ''
     });
 
     res.status(201).json({
@@ -479,7 +479,7 @@ router.put('/endpoints/:endpointId', limiter, async (req: Request, res: Response
 
     // Validate and sanitize input
     const updateData: Partial<typeof Endpoint.schema.obj> = {
-      path: typeof req.body.path === 'string' 
+      path: typeof req.body.path === 'string'
         ? (req.body.path.startsWith('/') ? req.body.path : '/' + req.body.path).trim()
         : undefined,
       method: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].includes(req.body.method?.toUpperCase())
@@ -535,7 +535,7 @@ router.put('/endpoints/:endpointId', limiter, async (req: Request, res: Response
     // Validate all fields against schema
     const schemaFields = Object.keys(Endpoint.schema.paths);
     const allowedFields = new Set(schemaFields);
-    
+
     // Remove any fields that aren't in the schema
     const sanitizedData: Record<string, unknown> = {};
     Object.entries(updateData).forEach(([key, value]) => {

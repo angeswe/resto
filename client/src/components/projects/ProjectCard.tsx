@@ -7,33 +7,24 @@ import {
 } from '@heroicons/react/24/outline';
 import { Card, CardHeader, CardBody, Button } from '@heroui/react';
 import { timeAgo } from '@/utils/helpers';
-import { Endpoint } from '@/types/project';
-
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  defaultSchema: string | Record<string, any>;
-  defaultCount: number;
-  requireAuth: boolean;
-  apiKeys: string[];
-  endpoints: Endpoint[];
-  createdAt: string;
-  updatedAt: string;
-}
+import { Project } from '@/types/project';
 
 interface ProjectCardProps {
   project: Project;
   onDelete: (id: string) => void;
 }
 
+/**
+ * Displays a card with project information and actions
+ * @param project - The project to display
+ * @param onDelete - Callback function when delete button is clicked
+ */
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
   const handleDelete = () => {
     if (window.confirm('Are you sure you want to delete this project?')) {
       onDelete(project.id);
     }
   };
-
 
   return (
     <Card

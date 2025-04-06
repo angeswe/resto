@@ -2,33 +2,45 @@ import { useEffect, useState } from 'react';
 import SchemaEditor from '../projects/SchemaEditor';
 import { toast } from 'react-toastify';
 import { Endpoint, EndpointData, EndpointMethod } from '../../types/project';
-import { useAppContext } from '../../contexts/AppContext';
 import { METHOD_STATUS_CODES } from '../../types/http';
-import { Button, Input, Switch } from '@heroui/react';
+import { Button, Input, Switch, Select, SelectItem } from '@heroui/react';
 
+/**
+ * HTTP status code interface
+ */
 interface HttpStatusCode {
   code: string;
   text: string;
   category: string;
 }
 
+/**
+ * Status codes grouped by category
+ */
 interface StatusByCategory {
   [key: string]: HttpStatusCode[];
 }
 
+/**
+ * Props for the EndpointForm component
+ */
 interface EndpointFormProps {
-  projectId: string;
   onSubmit: (data: EndpointData) => Promise<void>;
   onCancel: () => void;
   initialData?: Endpoint | EndpointData;
+  isSubmitting?: boolean;
+  theme?: 'light' | 'dark';
 }
 
+/**
+ * Form data for endpoint creation/editing
+ */
 interface EndpointFormData {
   path: string;
   method: EndpointMethod;
   schemaDefinition: string;
   count: number;
-  supportPagination: boolean;
+  //supportPagination: boolean;
   requireAuth: boolean;
   apiKeys: string[];
   delay: number;
@@ -37,6 +49,9 @@ interface EndpointFormData {
   responseHttpStatus: string;
 }
 
+/**
+ * Default schema for new endpoints
+ */
 const defaultSchema = {
   id: "(random:uuid)",
   name: "(random:name)",
@@ -44,9 +59,16 @@ const defaultSchema = {
   createdAt: "(random:datetime)"
 };
 
-const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCancel, initialData }) => {
-  console.log('Project ID:', projectId);
-  const { theme } = useAppContext();
+/**
+ * Component for creating or editing endpoints
+ */
+const EndpointForm: React.FC<EndpointFormProps> = ({
+  onSubmit,
+  onCancel,
+  initialData,
+  isSubmitting: externalIsSubmitting = false,
+  theme = 'dark'
+}) => {
   const [formData, setFormData] = useState<EndpointFormData>({
     path: initialData?.path || '',
     method: initialData?.method || 'GET',
@@ -54,7 +76,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
       ? initialData.schemaDefinition
       : JSON.stringify(initialData?.schemaDefinition || defaultSchema, null, 2),
     count: initialData?.count || 10,
-    supportPagination: initialData?.supportPagination || false,
+    //supportPagination: initialData?.supportPagination || false,
     requireAuth: initialData?.requireAuth || false,
     apiKeys: initialData?.apiKeys || [],
     delay: initialData?.delay || 0,
@@ -64,7 +86,10 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
   });
 
   const [isValidJson, setIsValidJson] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [internalIsSubmitting, setInternalIsSubmitting] = useState(false);
+
+  // Use external isSubmitting state if provided, otherwise use internal state
+  const isSubmitting = externalIsSubmitting || internalIsSubmitting;
 
   useEffect(() => {
     if (initialData) {
@@ -75,7 +100,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
           ? initialData.schemaDefinition
           : JSON.stringify(initialData.schemaDefinition || defaultSchema, null, 2),
         count: initialData.count || 10,
-        supportPagination: initialData.supportPagination || false,
+        //supportPagination: initialData.supportPagination || false,
         requireAuth: initialData.requireAuth || false,
         apiKeys: initialData.apiKeys || [],
         delay: initialData.delay || 0,
@@ -96,6 +121,10 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSchemaChange = (value: string) => {
@@ -140,12 +169,23 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
       return;
     }
 
-    setIsSubmitting(true);
+    // Only set internal submitting state if external isn't provided
+    if (!externalIsSubmitting) {
+      setInternalIsSubmitting(true);
+    }
+
     try {
-      // Always convert schema to string before submitting
+      // Parse the schema string to an object before submitting
+      let parsedSchema;
+      try {
+        parsedSchema = JSON.parse(formData.schemaDefinition);
+      } catch (error) {
+        parsedSchema = defaultSchema;
+      }
+
       const endpointData: EndpointData = {
         ...formData,
-        schemaDefinition: formData.schemaDefinition,
+        schemaDefinition: parsedSchema,
         responseType: formData.responseType === 'list' ? 'list' : 'object'
       };
       await onSubmit(endpointData);
@@ -153,7 +193,10 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
       console.error('Error submitting endpoint:', error);
       toast.error('Failed to save endpoint');
     } finally {
-      setIsSubmitting(false);
+      // Only reset internal submitting state if external isn't provided
+      if (!externalIsSubmitting) {
+        setInternalIsSubmitting(false);
+      }
     }
   };
 
@@ -162,6 +205,9 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
     acc[status.category].push(status);
     return acc;
   }, {});
+
+  // Prepare status code items for rendering
+  const statusCodeCategories = Object.keys(statusCodes);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -177,22 +223,28 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
           onChange={handleChange}
           placeholder="/api/users"
           required
+          disabled={isSubmitting}
         />
       </div>
 
       <div className="space-y-2">
         <label className="block text-sm font-medium">Method</label>
-        <select
-          name="method"
-          value={formData.method}
-          onChange={handleChange}
-          className="w-full px-3 py-2 rounded-md border focus:ring-2 focus:ring-indigo-500"
+        <Select
+          aria-label="Select HTTP method"
+          selectedKeys={[formData.method]}
+          onSelectionChange={(keys) => {
+            const selected = Array.from(keys)[0] as EndpointMethod;
+            if (selected) {
+              handleSelectChange('method', selected);
+            }
+          }}
+          isDisabled={isSubmitting}
         >
-          <option value="GET">GET</option>
-          <option value="POST">POST</option>
-          <option value="PUT">PUT</option>
-          <option value="DELETE">DELETE</option>
-        </select>
+          <SelectItem key="GET">GET</SelectItem>
+          <SelectItem key="POST">POST</SelectItem>
+          <SelectItem key="PUT">PUT</SelectItem>
+          <SelectItem key="DELETE">DELETE</SelectItem>
+        </Select>
       </div>
 
       {formData.method === 'GET' && (
@@ -200,16 +252,20 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
           <label htmlFor="responseType" className="block text-sm font-medium">
             Response Type
           </label>
-          <select
-            id="responseType"
-            name="responseType"
-            value={formData.responseType}
-            onChange={handleChange}
-            className="w-full px-3 py-2 rounded-md border focus:ring-2 focus:ring-indigo-500"
+          <Select
+            aria-label="Select response type"
+            selectedKeys={[formData.responseType]}
+            onSelectionChange={(keys) => {
+              const selected = Array.from(keys)[0] as 'list' | 'object';
+              if (selected) {
+                handleSelectChange('responseType', selected);
+              }
+            }}
+            isDisabled={isSubmitting}
           >
-            <option value="list">List (Index)</option>
-            <option value="object">Single Item</option>
-          </select>
+            <SelectItem key="list">List</SelectItem>
+            <SelectItem key="object">Single Object</SelectItem>
+          </Select>
         </div>
       )}
 
@@ -217,74 +273,113 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
         <label htmlFor="responseHttpStatus" className="block text-sm font-medium">
           Response HTTP Status
         </label>
-        <select
-          id="responseHttpStatus"
-          name="responseHttpStatus"
-          value={formData.responseHttpStatus}
-          onChange={(e) => setFormData({ ...formData, responseHttpStatus: e.target.value })}
-          className="w-full px-3 py-2 rounded-md border focus:ring-2 focus:ring-indigo-500"
+        <Select
+          aria-label="Select HTTP status code"
+          selectedKeys={[formData.responseHttpStatus]}
+          onSelectionChange={(keys) => {
+            const selected = Array.from(keys)[0] as string;
+            if (selected) {
+              handleSelectChange('responseHttpStatus', selected);
+            }
+          }}
+          isDisabled={isSubmitting}
         >
-          {Object.entries(statusCodes).map(([category, codes]) => (
-            <optgroup key={category} label={category.replace(/([A-Z])/g, ' $1').toLowerCase()}>
-              {codes.map(status => (
-                <option key={status.code} value={String(status.code)}>
-                  {status.code} {status.text}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+          {statusCodeCategories.flatMap(category => [
+            <SelectItem key={category} textValue={category}>
+              <div className="font-bold text-sm">{category}</div>
+            </SelectItem>,
+            ...statusCodes[category].map(status => (
+              <SelectItem key={status.code} textValue={`${status.code} - ${status.text}`}>
+                <div className="pl-2">{status.code} - {status.text}</div>
+              </SelectItem>
+            ))
+          ])}
+        </Select>
       </div>
 
-      {formData.method === 'GET' && formData.responseType === 'object' && (
-        <div className="space-y-2">
-          <label htmlFor="parameterPath" className="block text-sm font-medium">
-            Parameter Path
-          </label>
-          <input
-            type="text"
-            id="parameterPath"
-            name="parameterPath"
-            value={formData.parameterPath}
-            onChange={handleChange}
-            placeholder=":id"
-            className="w-full px-3 py-2 rounded-md border focus:ring-2 focus:ring-indigo-500"
-          />
-          <p className="text-sm text-gray-500">
-            This will be used to identify the item in the URL (e.g., /api/users/:id)
-          </p>
-        </div>
-      )}
+      <div className="space-y-2">
+        <SchemaEditor
+          value={formData.schemaDefinition}
+          onChange={handleSchemaChange}
+          isValid={isValidJson}
+          theme={theme}
+        />
+      </div>
 
       {formData.method === 'GET' && formData.responseType === 'list' && (
         <>
           <div className="space-y-2">
             <label htmlFor="count" className="block text-sm font-medium">
-              Default Count
+              Count
             </label>
             <Input
               type="number"
               id="count"
               name="count"
-              value={String(formData.count)}
+              value={formData.count.toString()}
               onChange={handleChange}
-              min="1"
+              min={1}
+              max={100}
+              disabled={isSubmitting}
             />
           </div>
 
-          <div className="flex items-center space-x-2">
+          {/* <div className="space-y-2">
             <Switch
-              id="supportPagination"
-              name="supportPagination"
-              checked={formData.supportPagination}
-              onChange={handleChange}
-              disabled={true}
-            />
-            <label htmlFor="supportPagination" className="text-sm text-gray-500">
-              Support Pagination (Coming soon)
-            </label>
-          </div>
+              isSelected={formData.supportPagination}
+              onValueChange={(checked) => setFormData(prev => ({ ...prev, supportPagination: checked }))}
+              aria-label="Support Pagination"
+              isDisabled={isSubmitting}
+            >
+              Support Pagination
+            </Switch>
+          </div> */}
         </>
+      )}
+
+      <div className="space-y-2">
+        <Switch
+          isSelected={formData.requireAuth}
+          onValueChange={(checked) => setFormData(prev => ({ ...prev, requireAuth: checked }))}
+          aria-label="Require Authentication"
+          isDisabled={isSubmitting}
+        >
+          Require Authentication
+        </Switch>
+      </div>
+
+      {formData.requireAuth && (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">API Keys</label>
+          <div className="space-y-2">
+            {formData.apiKeys.map((key, index) => (
+              <div key={index} className="flex space-x-2">
+                <Input
+                  type="text"
+                  value={key}
+                  onChange={(e) => handleApiKeyChange(index, e.target.value)}
+                  placeholder="API Key"
+                  disabled={isSubmitting}
+                />
+                <Button
+                  type="button"
+                  onPress={() => handleRemoveApiKey(index)}
+                  color="danger"
+                  disabled={isSubmitting}
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+            <Button
+              type="button"
+              onPress={handleAddApiKey}
+              disabled={isSubmitting}
+            >
+              Add API Key
+            </Button>
+          </div>
+        </div>
       )}
 
       <div className="space-y-2">
@@ -295,79 +390,45 @@ const EndpointForm: React.FC<EndpointFormProps> = ({ projectId, onSubmit, onCanc
           type="number"
           id="delay"
           name="delay"
-          value={String(formData.delay)}
+          value={formData.delay.toString()}
           onChange={handleChange}
-          min="0"
+          min={0}
+          max={10000}
+          disabled={isSubmitting}
         />
       </div>
 
       <div className="space-y-2">
-        <h3 className="text-lg font-medium">Schema Definition</h3>
-        <SchemaEditor
-          value={formData.schemaDefinition}
-          onChange={handleSchemaChange}
-          isValid={isValidJson}
-          theme={theme}
+        <label htmlFor="parameterPath" className="block text-sm font-medium">
+          Parameter Path (optional)
+        </label>
+        <Input
+          type="text"
+          id="parameterPath"
+          name="parameterPath"
+          value={formData.parameterPath}
+          onChange={handleChange}
+          placeholder="/api/users/:id"
+          disabled={isSubmitting}
         />
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="requireAuth"
-            name="requireAuth"
-            isSelected={formData.requireAuth}
-            onChange={handleChange}
-          />
-          <label htmlFor="requireAuth" className="text-sm font-medium">
-            Require Authentication
-          </label>
-        </div>
-
-        {formData.requireAuth && (
-          <div className="ml-6 space-y-4">
-            {formData.apiKeys.map((key, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <Input
-                  type="text"
-                  value={key}
-                  onChange={(e) => handleApiKeyChange(index, e.target.value)}
-                  placeholder="API Key"
-                />
-                <Button
-                  type="button"
-                  onPress={() => handleRemoveApiKey(index)}
-                  variant="flat"
-                  color="danger"
-                >
-                  Remove
-                </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              onPress={handleAddApiKey}
-              variant="flat"
-            >
-              Add Key
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <div className="flex justify-end space-x-4">
+      <div className="flex justify-end space-x-3">
         <Button
           type="button"
-          variant="flat"
           onPress={onCancel}
+          variant="flat"
+          disabled={isSubmitting}
         >
           Cancel
         </Button>
         <Button
           type="submit"
-          disabled={isSubmitting || !isValidJson}
+          color="primary"
+          isLoading={isSubmitting}
+          isDisabled={!isValidJson || isSubmitting}
         >
-          {isSubmitting ? 'Saving...' : 'Save'}
+          {isSubmitting ? 'Saving...' : 'Save Endpoint'}
         </Button>
       </div>
     </form>

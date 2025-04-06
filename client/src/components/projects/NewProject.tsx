@@ -3,22 +3,22 @@ import { useNavigate } from "react-router-dom";
 import { Link } from 'react-router-dom';
 import { ArrowLeftIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { Card, CardBody, Input, Textarea, Button } from "@heroui/react";
-import { useAppContext } from "../../contexts/AppContext";
 import { ProjectData } from "../../types/project";
 import { toast } from 'react-toastify';
+import { useCreateProject } from "../../hooks/queries/useProjectQueries";
+import { DEFAULT_SCHEMA } from "../../types/schema";
 
-const defaultJsonSchema = {
-  id: "(random:uuid)",
-  name: "(random:name)",
-  email: "(random:email)",
-  createdAt: "(random:datetime)"
-};
-
+/**
+ * Component for creating a new project
+ */
 const NewProject: React.FC = () => {
   const navigate = useNavigate();
-  const { addProject } = useAppContext();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const createProjectMutation = useCreateProject();
+  
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+  }>({
     name: '',
     description: '',
   });
@@ -29,31 +29,27 @@ const NewProject: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
 
     if (!formData.name.trim()) {
       toast.error("Project name is required");
-      setLoading(false);
       return;
     }
 
     const projectData: ProjectData = {
       name: formData.name.trim(),
       description: formData.description.trim(),
-      defaultSchema: defaultJsonSchema,
+      defaultSchema: DEFAULT_SCHEMA, // Using the standardized schema from types
       defaultCount: 10,
       requireAuth: false,
       apiKeys: [],
     };
 
     try {
-      const response = await addProject(projectData);
-      navigate(`/projects/${response.id}/settings`);
+      const newProject = await createProjectMutation.mutateAsync(projectData);
+      navigate(`/projects/${newProject.id}/settings`);
     } catch (error) {
+      // Error handling is done in the mutation's onError callback
       console.error("Error creating project:", error);
-      // Error toast is handled by AppContext
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -108,9 +104,9 @@ const NewProject: React.FC = () => {
                 type="submit"
                 color="primary"
                 startContent={<PlusIcon className="h-5 w-5" />}
-                isLoading={loading}
+                isLoading={createProjectMutation.isPending}
               >
-                {loading ? "Creating..." : "Create Project"}
+                {createProjectMutation.isPending ? "Creating..." : "Create Project"}
               </Button>
             </div>
           </form>

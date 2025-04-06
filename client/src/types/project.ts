@@ -1,8 +1,10 @@
+import { SchemaDefinition } from './schema';
+
 export interface Project {
   id: string;
   name: string;
   description: string;
-  defaultSchema: string | Record<string, any>;
+  defaultSchema: SchemaDefinition;
   defaultCount: number;
   requireAuth: boolean;
   apiKeys: string[];
@@ -17,7 +19,7 @@ export type ResponseType = 'object' | 'list' | 'single';
 export interface ProjectData {
   name: string;
   description: string;
-  defaultSchema?: object;
+  defaultSchema?: SchemaDefinition;
   defaultCount?: number;
   requireAuth?: boolean;
   apiKeys?: string[];
@@ -26,9 +28,9 @@ export interface ProjectData {
 export interface EndpointData {
   path: string;
   method: EndpointMethod;
-  schemaDefinition: string | Record<string, any>;
+  schemaDefinition: SchemaDefinition;
   count: number;
-  supportPagination: boolean;
+  //supportPagination: boolean;
   requireAuth: boolean;
   apiKeys: string[];
   delay: number;
@@ -36,8 +38,8 @@ export interface EndpointData {
   parameterPath: string;
   responseHttpStatus: string;
   description?: string;
-  request?: any;
-  response?: any;
+  request?: Record<string, unknown>;
+  response?: Record<string, unknown>;
 }
 
 export interface Endpoint extends EndpointData {
@@ -60,7 +62,7 @@ export interface AppContextType {
   addProject: (projectData: ProjectData) => Promise<Project>;
   updateProject: (projectId: string, projectData: ProjectData) => Promise<Project>;
   deleteProject: (projectId: string) => Promise<void>;
-  addEndpoint: (projectId: string, endpointData: any) => Promise<void>;
-  updateEndpoint: (projectId: string, endpointId: string, endpointData: any) => Promise<void>;
+  addEndpoint: (projectId: string, endpointData: EndpointData) => Promise<void>;
+  updateEndpoint: (projectId: string, endpointId: string, endpointData: EndpointData) => Promise<void>;
   deleteEndpoint: (projectId: string, endpointId: string) => Promise<void>;
 }
