@@ -15,7 +15,6 @@ export interface IEndpoint extends Document {
   projectId: string;
   schemaDefinition: any;
   count: number;
-  supportPagination: boolean;
   requireAuth: boolean;
   apiKeys: string[];
   delay: number;

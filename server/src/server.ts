@@ -12,6 +12,8 @@ import { errorHandler } from './middleware/error';
 import { projectRoutes } from './routes/projects';
 import { endpointRoutes } from './routes/endpoints';
 import mockApiRoutes from './routes/mockApi';
+// Import Swagger documentation
+import './swagger';
 
 dotenv.config();
 
@@ -131,7 +133,7 @@ class Server {
       this.app.listen(port, () => {
         console.log(`Server is running on port ${port}`);
         console.log(`API routes: http://localhost:${port}/api`);
-        console.log(`Mock API routes: http://localhost:${port}/mock/{projectId}/{path}`);
+        console.log(`Mock API routes: http://localhost:${port}/api/mock/{projectId}/{path}`);
       });
     } catch (error) {
       console.error('Failed to start server:', error);

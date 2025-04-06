@@ -123,7 +123,6 @@ router.post('/projects/:projectId/endpoints', async (req, res) => {
             method: formattedMethod,
             schemaDefinition: schemaDefinition || {},
             count: req.body.count || 10,
-            supportPagination: req.body.supportPagination || false,
             requireAuth: req.body.requireAuth || false,
             apiKeys: req.body.apiKeys || [],
             delay: req.body.delay || 0,

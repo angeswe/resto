@@ -8,7 +8,6 @@ function isIEndpoint(obj) {
         typeof obj.method === 'string' &&
         obj.schemaDefinition &&
         typeof obj.count === 'number' &&
-        typeof obj.supportPagination === 'boolean' &&
         typeof obj.requireAuth === 'boolean' &&
         Array.isArray(obj.apiKeys) &&
         typeof obj.delay === 'number' &&

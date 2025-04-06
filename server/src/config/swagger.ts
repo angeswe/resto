@@ -115,11 +115,6 @@ const options: swaggerJsdoc.Options = {
               maximum: 10000,
               default: 10
             },
-            supportPagination: {
-              type: 'boolean',
-              description: 'Whether endpoint supports pagination',
-              default: false
-            },
             requireAuth: {
               type: 'boolean',
               description: 'Whether authentication is required',
@@ -174,7 +169,7 @@ const options: swaggerJsdoc.Options = {
       },
     },
   },
-  apis: ['./src/routes/*.ts'], // Path to the API routes
+  apis: ['./src/swagger/*.ts'], // Path to the Swagger documentation files
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

@@ -52,7 +52,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentTheme, onThemeChange }) => {
             isIconOnly
             variant="light"
             aria-label="Toggle theme"
-            onClick={() => onThemeChange(currentTheme === 'light' ? 'dark' : 'light')}
+            onPress={() => onThemeChange(currentTheme === 'light' ? 'dark' : 'light')}
           >
             {currentTheme === 'light' ? (
               <MoonIcon className="h-5 w-5" />

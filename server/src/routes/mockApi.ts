@@ -1,186 +1,19 @@
-import express, { Request, Response, Router } from 'express';
-import { DataGenerator } from '../utils/dataGenerator';
+import express, { Request, Response, NextFunction, Router } from 'express';
+import { Types } from 'mongoose';
 import { Endpoint } from '../models/Endpoint';
 import { Project } from '../models/Project';
-import { IEndpoint } from '../types';
-import { Schema } from '../utils/dataGenerator';
-import { Types } from 'mongoose';
-import { isValidStatusCodeForMethod, getDefaultSuccessStatusCode, METHOD_STATUS_CODES, HttpMethod } from '../types/http';
+import { DataGenerator } from '../utils/dataGenerator';
+import { rateLimit } from 'express-rate-limit';
 
-const router = express.Router();
+// Create a rate limiter
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-/**
- * @swagger
- * /mock/{projectId}/*:
- *   get:
- *     summary: Mock any GET endpoint
- *     tags: [Mock API]
- *     parameters:
- *       - in: path
- *         name: projectId
- *         required: true
- *         schema:
- *           type: string
- *         description: Project ID
- *       - in: path
- *         name: '*'
- *         required: true
- *         schema:
- *           type: string
- *         description: The endpoint path to mock (name of the endpoint)
- *     responses:
- *       200:
- *         description: Mock response based on endpoint configuration
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               description: Dynamic response based on endpoint configuration
- *       404:
- *         description: Endpoint not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *   post:
- *     summary: Mock any POST endpoint
- *     tags: [Mock API]
- *     parameters:
- *       - in: path
- *         name: projectId
- *         required: true
- *         schema:
- *           type: string
- *         description: Project ID
- *       - in: path
- *         name: '*'
- *         required: true
- *         schema:
- *           type: string
- *         description: The endpoint path to mock (name of the endpoint)
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             description: Any JSON payload
- *     responses:
- *       200:
- *         description: Mock response based on endpoint configuration
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               description: Dynamic response based on endpoint configuration
- *       404:
- *         description: Endpoint not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *   put:
- *     summary: Mock any PUT endpoint
- *     tags: [Mock API]
- *     parameters:
- *       - in: path
- *         name: projectId
- *         required: true
- *         schema:
- *           type: string
- *         description: Project ID
- *       - in: path
- *         name: '*'
- *         required: true
- *         schema:
- *           type: string
- *         description: The endpoint path to mock (name of the endpoint)
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             description: Any JSON payload
- *     responses:
- *       200:
- *         description: Mock response based on endpoint configuration
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               description: Dynamic response based on endpoint configuration
- *       404:
- *         description: Endpoint not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *   delete:
- *     summary: Mock any DELETE endpoint
- *     tags: [Mock API]
- *     parameters:
- *       - in: path
- *         name: projectId
- *         required: true
- *         schema:
- *           type: string
- *         description: Project ID
- *       - in: path
- *         name: '*'
- *         required: true
- *         schema:
- *           type: string
- *         description: The endpoint path to mock (name of the endpoint)
- *     responses:
- *       200:
- *         description: Mock response based on endpoint configuration
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               description: Dynamic response based on endpoint configuration
- *       404:
- *         description: Endpoint not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *   patch:
- *     summary: Mock any PATCH endpoint
- *     tags: [Mock API]
- *     parameters:
- *       - in: path
- *         name: projectId
- *         required: true
- *         schema:
- *           type: string
- *         description: Project ID
- *       - in: path
- *         name: '*'
- *         required: true
- *         schema:
- *           type: string
- *         description: The endpoint path to mock (name of the endpoint)
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             description: Any JSON payload
- *     responses:
- *       200:
- *         description: Mock response based on endpoint configuration
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               description: Dynamic response based on endpoint configuration
- *       404:
- *         description: Endpoint not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
+const router: Router = express.Router();
 
 // Match URL path with endpoint path pattern
 function matchPathPattern(urlPath: string, endpointPath: string): { matches: boolean; params: Record<string, string> } {
@@ -338,7 +171,7 @@ router.all('*', async (req: Request, res: Response) => {
       });
     }
 
-    let matchedEndpoint: IEndpoint | null = null;
+    let matchedEndpoint: any = null;
     let pathParams: Record<string, string> = {};
 
     // First try to match with parameter paths
@@ -423,38 +256,38 @@ router.all('*', async (req: Request, res: Response) => {
       const maxCount = 100; // Add a reasonable limit
       const count = Math.min(matchedEndpoint.count || 10, maxCount);
 
-      if (matchedEndpoint.supportPagination) {
-        const page = Math.max(1, Math.min(parseInt(req.query.page as string) || 1, 1000)); // Add upper bound
-        const limit = Math.max(1, Math.min(parseInt(req.query.limit as string) || count, maxCount)); // Add bounds
-        const totalItems = Math.min(count, maxCount);
-        const startIndex = (page - 1) * limit;
-        const endIndex = Math.min(startIndex + limit, totalItems);
-        const itemsToGenerate = endIndex - startIndex;
+      // if (matchedEndpoint.supportPagination) {
+      //   const page = Math.max(1, Math.min(parseInt(req.query.page as string) || 1, 1000)); // Add upper bound
+      //   const limit = Math.max(1, Math.min(parseInt(req.query.limit as string) || count, maxCount)); // Add bounds
+      //   const totalItems = Math.min(count, maxCount);
+      //   const startIndex = (page - 1) * limit;
+      //   const endIndex = Math.min(startIndex + limit, totalItems);
+      //   const itemsToGenerate = endIndex - startIndex;
 
-        console.log('Generating paginated data:', {
-          page,
-          limit,
-          totalItems,
-          startIndex,
-          endIndex,
-          itemsToGenerate
-        });
+      //   console.log('Generating paginated data:', {
+      //     page,
+      //     limit,
+      //     totalItems,
+      //     startIndex,
+      //     endIndex,
+      //     itemsToGenerate
+      //   });
 
-        responseData = {
-          data: DataGenerator.generate(schema, itemsToGenerate),
-          pagination: {
-            page,
-            limit,
-            totalItems,
-            totalPages: Math.ceil(totalItems / limit)
-          }
-        };
-      } else {
-        console.log('Generating list data with count:', count);
-        responseData = {
-          data: DataGenerator.generate(schema, count)
-        };
-      }
+      //   responseData = {
+      //     data: DataGenerator.generate(schema, itemsToGenerate),
+      //     pagination: {
+      //       page,
+      //       limit,
+      //       totalItems,
+      //       totalPages: Math.ceil(totalItems / limit)
+      //     }
+      //   };
+      // } else {
+      console.log('Generating list data with count:', count);
+      responseData = {
+        data: DataGenerator.generate(schema, count)
+      };
+      // }
     } else {
       // For all other cases (single GET, POST, PUT, DELETE)
       console.log('Generating single response data');
@@ -470,10 +303,10 @@ router.all('*', async (req: Request, res: Response) => {
     console.log('Generated response data:', JSON.stringify(responseData, null, 2));
 
     // Send response
-    const method = req.method as HttpMethod;
+    const method = req.method as any;
     let statusCode: number;
     try {
-      const defaultStatus = getDefaultSuccessStatusCode(method);
+      const defaultStatus = 200;
       statusCode = parseInt(matchedEndpoint.responseHttpStatus || defaultStatus.toString());
     } catch (e) {
       console.error('Error parsing status code:', e);
@@ -481,7 +314,7 @@ router.all('*', async (req: Request, res: Response) => {
     }
 
     // Validate status code
-    const validStatusCodes = METHOD_STATUS_CODES[method].map(s => parseInt(s.code));
+    const validStatusCodes = [200, 201, 204, 400, 401, 403, 404, 500];
     if (!validStatusCodes.includes(statusCode)) {
       console.error(`Invalid status code ${statusCode} for method ${method}`);
       res.status(500).json({
@@ -504,7 +337,7 @@ router.all('*', async (req: Request, res: Response) => {
 });
 
 // Add schema validation helper
-function isValidSchema(schema: Schema | Schema[]): boolean {
+function isValidSchema(schema: any): boolean {
   try {
     if (!schema) {
       console.log('Schema is null or undefined');
@@ -529,7 +362,7 @@ function isValidSchema(schema: Schema | Schema[]): boolean {
       // Handle nested objects
       if (typeof value === 'object' && !Array.isArray(value)) {
         console.log('Validating nested object');
-        if (!isValidSchema(value as Schema)) {
+        if (!isValidSchema(value)) {
           console.log('Nested object validation failed');
           return false;
         }
@@ -539,7 +372,7 @@ function isValidSchema(schema: Schema | Schema[]): boolean {
       // Handle arrays of schemas
       if (Array.isArray(value)) {
         console.log('Validating array value');
-        if (!value.every(v => isValidSchema(v as Schema))) {
+        if (!value.every(v => isValidSchema(v))) {
           console.log('Array validation failed');
           return false;
         }

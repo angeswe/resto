@@ -13,31 +13,6 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs,
 });
 
-/**
- * @swagger
- * /api/debug:
- *   get:
- *     summary: Debug route to list all endpoints (Development only)
- *     tags: [Debug]
- *     responses:
- *       200:
- *         description: List of all endpoints
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 endpointCount:
- *                   type: integer
- *                   description: Total number of endpoints
- *                 endpoints:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       path:
- *                         type: string
- */
 router.get('/debug', limiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Only allow access in development mode
@@ -71,47 +46,6 @@ router.get('/debug', limiter, async (req: Request, res: Response, next: NextFunc
   }
 });
 
-/**
- * @swagger
- * /api/projects/{projectId}/endpoints:
- *   get:
- *     summary: Get all endpoints for a project
- *     tags: [Endpoints]
- *     parameters:
- *       - in: path
- *         name: projectId
- *         required: true
- *         schema:
- *           type: string
- *         description: Project ID
- *     responses:
- *       200:
- *         description: List of endpoints
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Endpoint'
- *       400:
- *         description: Invalid project ID
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.get('/projects/:projectId/endpoints', limiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projectId = req.params.projectId;
@@ -133,7 +67,6 @@ router.get('/projects/:projectId/endpoints', limiter, async (req: Request, res: 
         response: ep.response,
         schemaDefinition: ep.schemaDefinition,
         count: ep.count,
-        supportPagination: ep.supportPagination,
         requireAuth: ep.requireAuth,
         apiKeys: ep.apiKeys,
         delay: ep.delay,
@@ -149,97 +82,6 @@ router.get('/projects/:projectId/endpoints', limiter, async (req: Request, res: 
   }
 });
 
-/**
- * @swagger
- * /api/projects/{projectId}/endpoints:
- *   post:
- *     summary: Create a new endpoint for a project
- *     tags: [Endpoints]
- *     parameters:
- *       - in: path
- *         name: projectId
- *         required: true
- *         schema:
- *           type: string
- *         description: Project ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - path
- *               - method
- *             properties:
- *               path:
- *                 type: string
- *                 description: Endpoint path
- *               method:
- *                 type: string
- *                 description: HTTP method (GET, POST, PUT, DELETE)
- *               response:
- *                 type: string
- *                 description: Response data
- *               schemaDefinition:
- *                 type: object
- *                 description: Schema definition for data generation
- *               count:
- *                 type: integer
- *                 description: Number of items to generate
- *               supportPagination:
- *                 type: boolean
- *                 description: Whether to support pagination
- *               requireAuth:
- *                 type: boolean
- *                 description: Whether authentication is required
- *               apiKeys:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: List of API keys
- *               delay:
- *                 type: integer
- *                 description: Response delay in milliseconds
- *               responseType:
- *                 type: string
- *                 enum: [list, single]
- *                 description: Response type (list or single item)
- *               parameterPath:
- *                 type: string
- *                 description: Path for pagination parameter
- *     responses:
- *       201:
- *         description: Endpoint created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/Endpoint'
- *       400:
- *         description: Invalid request
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       404:
- *         description: Project not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.post('/projects/:projectId/endpoints', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projectId = req.params.projectId;
@@ -269,7 +111,6 @@ router.post('/projects/:projectId/endpoints', async (req: Request, res: Response
       response: req.body.response || '{}',
       schemaDefinition: req.body.schemaDefinition || '{}',
       count: req.body.count || 10,
-      supportPagination: req.body.supportPagination || false,
       requireAuth: req.body.requireAuth || false,
       apiKeys: req.body.apiKeys || [],
       delay: req.body.delay || 0,
@@ -286,57 +127,6 @@ router.post('/projects/:projectId/endpoints', async (req: Request, res: Response
   }
 });
 
-/**
- * @swagger
- * /api/projects/{projectId}/endpoints/{endpointId}:
- *   get:
- *     summary: Get an endpoint by ID
- *     tags: [Endpoints]
- *     parameters:
- *       - in: path
- *         name: projectId
- *         required: true
- *         schema:
- *           type: string
- *         description: Project ID
- *       - in: path
- *         name: endpointId
- *         required: true
- *         schema:
- *           type: string
- *         description: Endpoint ID
- *     responses:
- *       200:
- *         description: Endpoint details
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/Endpoint'
- *       400:
- *         description: Invalid ID
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       404:
- *         description: Endpoint not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.get('/projects/:projectId/endpoints/:endpointId', limiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { projectId, endpointId } = req.params;
@@ -368,97 +158,6 @@ router.get('/projects/:projectId/endpoints/:endpointId', limiter, async (req: Re
   }
 });
 
-/**
- * @swagger
- * /api/endpoints/{endpointId}:
- *   put:
- *     summary: Update an endpoint
- *     tags: [Endpoints]
- *     parameters:
- *       - in: path
- *         name: endpointId
- *         required: true
- *         schema:
- *           type: string
- *         description: Endpoint ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - path
- *               - method
- *             properties:
- *               path:
- *                 type: string
- *                 description: Endpoint path
- *               method:
- *                 type: string
- *                 description: HTTP method (GET, POST, PUT, DELETE)
- *               response:
- *                 type: string
- *                 description: Response data
- *               schemaDefinition:
- *                 type: object
- *                 description: Schema definition for data generation
- *               count:
- *                 type: integer
- *                 description: Number of items to generate
- *               supportPagination:
- *                 type: boolean
- *                 description: Whether to support pagination
- *               requireAuth:
- *                 type: boolean
- *                 description: Whether authentication is required
- *               apiKeys:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: List of API keys
- *               delay:
- *                 type: integer
- *                 description: Response delay in milliseconds
- *               responseType:
- *                 type: string
- *                 enum: [list, single]
- *                 description: Response type (list or single item)
- *               parameterPath:
- *                 type: string
- *                 description: Path for pagination parameter
- *     responses:
- *       200:
- *         description: Endpoint updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/Endpoint'
- *       400:
- *         description: Invalid request
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       404:
- *         description: Endpoint not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.put('/endpoints/:endpointId', limiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const endpointId = req.params.endpointId;
@@ -495,9 +194,6 @@ router.put('/endpoints/:endpointId', limiter, async (req: Request, res: Response
         : undefined,
       count: typeof req.body.count === 'number' && req.body.count >= 0
         ? Math.floor(req.body.count)
-        : undefined,
-      supportPagination: typeof req.body.supportPagination === 'boolean'
-        ? Boolean(req.body.supportPagination)
         : undefined,
       requireAuth: typeof req.body.requireAuth === 'boolean'
         ? Boolean(req.body.requireAuth)
@@ -573,55 +269,6 @@ router.put('/endpoints/:endpointId', limiter, async (req: Request, res: Response
   }
 });
 
-/**
- * @swagger
- * /api/endpoints/{endpointId}:
- *   delete:
- *     summary: Delete an endpoint
- *     tags: [Endpoints]
- *     parameters:
- *       - in: path
- *         name: endpointId
- *         required: true
- *         schema:
- *           type: string
- *         description: Endpoint ID
- *     responses:
- *       200:
- *         description: Endpoint deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                       description: Deleted endpoint ID
- *       400:
- *         description: Invalid ID
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       404:
- *         description: Endpoint not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.delete('/endpoints/:endpointId', limiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const endpointId = req.params.endpointId;

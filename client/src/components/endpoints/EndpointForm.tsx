@@ -408,7 +408,7 @@ const EndpointForm: React.FC<EndpointFormProps> = ({
           name="parameterPath"
           value={formData.parameterPath}
           onChange={handleChange}
-          placeholder="/api/users/:id"
+          placeholder=":id"
           disabled={isSubmitting}
         />
       </div>

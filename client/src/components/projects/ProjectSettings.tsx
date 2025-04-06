@@ -20,6 +20,7 @@ import SchemaEditor from './SchemaEditor';
 import ProjectDangerZone from './ProjectDangerZone';
 import { useProject, useUpdateProject, useDeleteProject } from '../../hooks/queries/useProjectQueries';
 import { DEFAULT_SCHEMA } from '../../types/schema';
+import { DeleteIcon, EndpointIcon, SettingsIcon } from '../common/Icons';
 
 /**
  * Form data interface for project settings
@@ -41,15 +42,15 @@ const ProjectSettings: React.FC = () => {
   const navigate = useNavigate();
   const { theme } = useAppContext();
   const { activeTab, setActiveTab } = useTabContext();
-  
+
   // TanStack Query hooks
-  const { 
-    data: project, 
-    isLoading, 
-    isError, 
-    error 
+  const {
+    data: project,
+    isLoading,
+    isError,
+    error
   } = useProject(id || '');
-  
+
   const updateProjectMutation = useUpdateProject(id || '');
   const deleteProjectMutation = useDeleteProject();
 
@@ -69,12 +70,12 @@ const ProjectSettings: React.FC = () => {
     if (project) {
       // If schema is an object, convert to string for display
       // If it's already a string, use it directly
-      const schemaValue = typeof project.defaultSchema === 'object' 
+      const schemaValue = typeof project.defaultSchema === 'object'
         ? JSON.stringify(project.defaultSchema, null, 2)
         : typeof project.defaultSchema === 'string'
           ? project.defaultSchema
           : JSON.stringify(DEFAULT_SCHEMA, null, 2);
-      
+
       const formattedData = {
         name: project.name || '',
         description: project.description || '',
@@ -212,7 +213,12 @@ const ProjectSettings: React.FC = () => {
   return (
     <div className="space-y-6">
       <Tabs fullWidth selectedKey={activeTab as string} onSelectionChange={setActiveTab}>
-        <Tab key="settings" title="Settings">
+        <Tab key="settings" title={
+          <div className="flex items-center space-x-2">
+            <SettingsIcon />
+            <span>Settings</span>
+          </div>
+        }>
           <form onSubmit={handleSubmit} className="space-y-6">
             <Card>
               <CardBody className="space-y-4">
@@ -291,7 +297,7 @@ const ProjectSettings: React.FC = () => {
           </form>
         </Tab>
 
-        <Tab key="endpoints" title="Endpoints">
+        <Tab key="endpoints" title={<div className="flex items-center space-x-2"><EndpointIcon /><span>Endpoints</span></div>}>
           <Card>
             <CardBody>
               <EndpointList projectId={id!} />
@@ -299,9 +305,10 @@ const ProjectSettings: React.FC = () => {
           </Card>
         </Tab>
 
-        <Tab key="danger" title="Danger Zone">
-          <ProjectDangerZone 
-            onDelete={handleDelete} 
+        <Tab key="danger" title={<div className="flex items-center space-x-2"><DeleteIcon /><span>Danger Zone</span>
+        </div>}>
+          <ProjectDangerZone
+            onDelete={handleDelete}
             isDeleting={deleteProjectMutation.isPending}
           />
         </Tab>

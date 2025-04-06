@@ -4,7 +4,6 @@ export interface IEndpoint {
   method: string;
   schemaDefinition: any;
   count: number;
-  supportPagination: boolean;
   requireAuth: boolean;
   apiKeys: string[];
   delay: number;

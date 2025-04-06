@@ -1,18 +1,20 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction, Router } from 'express';
+import { Types } from 'mongoose';
 import { Project } from '../models/Project';
 import { Endpoint } from '../models/Endpoint';
-import { Types } from 'mongoose';
+import { rateLimit } from 'express-rate-limit';
 import ErrorResponse from '../utils/ErrorResponse';
 import { IProject } from '../types';
-import rateLimit from 'express-rate-limit';
 
-const router = Router();
-
-// Set up rate limiter: maximum of 100 requests per 15 minutes
+// Create a rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs,
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
 });
+
+const router: Router = express.Router();
 
 // Format project data for response
 const formatProject = (project: IProject) => ({
@@ -28,91 +30,6 @@ const formatProject = (project: IProject) => ({
   updatedAt: project.updatedAt
 });
 
-/**
- * @swagger
- * /api/projects:
- *   get:
- *     summary: Get all projects
- *     tags: [Projects]
- *     responses:
- *       200:
- *         description: List of projects
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Project'
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *   post:
- *     summary: Create a new project
- *     tags: [Projects]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *             properties:
- *               name:
- *                 type: string
- *                 description: Project name
- *               description:
- *                 type: string
- *                 description: Project description
- *               defaultSchema:
- *                 type: object
- *                 description: Default schema for data generation
- *               defaultCount:
- *                 type: integer
- *                 description: Default number of items to generate
- *               requireAuth:
- *                 type: boolean
- *                 description: Whether authentication is required
- *               apiKeys:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: List of API keys
- *     responses:
- *       201:
- *         description: Project created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/Project'
- *       400:
- *         description: Invalid request
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.route('/')
   .get(async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -197,166 +114,6 @@ router.route('/')
     }
   });
 
-/**
- * @swagger
- * /api/projects/{id}:
- *   get:
- *     summary: Get a project by ID
- *     tags: [Projects]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Project ID
- *     responses:
- *       200:
- *         description: Project details
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/Project'
- *       400:
- *         description: Invalid ID
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       404:
- *         description: Project not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *   put:
- *     summary: Update a project
- *     tags: [Projects]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Project ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *             properties:
- *               name:
- *                 type: string
- *                 description: Project name
- *               description:
- *                 type: string
- *                 description: Project description
- *               defaultSchema:
- *                 type: object
- *                 description: Default schema for data generation
- *               defaultCount:
- *                 type: integer
- *                 description: Default number of items to generate
- *               requireAuth:
- *                 type: boolean
- *                 description: Whether authentication is required
- *               apiKeys:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: List of API keys
- *     responses:
- *       200:
- *         description: Project updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/Project'
- *       400:
- *         description: Invalid request
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       404:
- *         description: Project not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *   delete:
- *     summary: Delete a project
- *     tags: [Projects]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Project ID
- *     responses:
- *       200:
- *         description: Project deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                       description: Deleted project ID
- *       400:
- *         description: Invalid ID
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       404:
- *         description: Project not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.route('/:id').all(limiter)
   .get(async (req: Request, res: Response, next: NextFunction) => {
     try {

@@ -19,7 +19,6 @@ export interface IEndpoint extends Document {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   schemaDefinition: Schema;
   count: number;
-  supportPagination: boolean;
   requireAuth: boolean;
   apiKeys: string[];
   delay: number;
@@ -45,7 +44,6 @@ export function isIEndpoint(obj: any): obj is IEndpoint {
     (obj.method === 'GET' || obj.method === 'POST' || obj.method === 'PUT' || obj.method === 'DELETE' || obj.method === 'PATCH') &&
     obj.schemaDefinition &&
     typeof obj.count === 'number' &&
-    typeof obj.supportPagination === 'boolean' &&
     typeof obj.requireAuth === 'boolean' &&
     Array.isArray(obj.apiKeys) &&
     typeof obj.delay === 'number' &&

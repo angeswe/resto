@@ -35,11 +35,11 @@ const ProjectList = () => {
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
             {error instanceof Error ? error.message : 'An unexpected error occurred'}
           </p>
-          <Button 
-            color="primary" 
-            variant="solid" 
+          <Button
+            color="primary"
+            variant="solid"
             className="mt-4"
-            onClick={() => window.location.reload()}
+            onPress={() => window.location.reload()}
           >
             Retry
           </Button>

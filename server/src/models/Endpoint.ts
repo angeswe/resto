@@ -23,10 +23,6 @@ const EndpointSchema = new Schema({
     min: 1,
     max: 10000
   },
-  supportPagination: {
-    type: Boolean,
-    default: false
-  },
   requireAuth: {
     type: Boolean,
     default: false
