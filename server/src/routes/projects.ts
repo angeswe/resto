@@ -4,7 +4,8 @@ import { Project } from '../models/Project';
 import { Endpoint } from '../models/Endpoint';
 import { rateLimit } from 'express-rate-limit';
 import ErrorResponse from '../utils/ErrorResponse';
-import { IProject } from '../types';
+import { IProject, IEndpoint } from '../types';
+import { Schema } from '../utils/dataGenerator';
 
 // Create a rate limiter
 const limiter = rateLimit({
@@ -17,7 +18,18 @@ const limiter = rateLimit({
 const router: Router = express.Router();
 
 // Format project data for response
-const formatProject = (project: IProject) => ({
+const formatProject = (project: IProject): {
+  id: string;
+  name: string;
+  description: string;
+  defaultSchema: Schema;
+  defaultCount: number;
+  requireAuth: boolean;
+  apiKeys: string[];
+  endpoints: IEndpoint[];
+  createdAt: Date;
+  updatedAt: Date;
+} => ({
   id: project.id,
   name: project.name,
   description: project.description,
@@ -75,10 +87,10 @@ router.route('/')
       if (projectData.defaultSchema) {
         try {
           // If it's already an object, convert to string and back to validate
-          const schema = typeof projectData.defaultSchema === 'string' 
+          const schema = typeof projectData.defaultSchema === 'string'
             ? JSON.parse(projectData.defaultSchema)
             : projectData.defaultSchema;
-          
+
           // Convert back to string for storage
           projectData.defaultSchema = JSON.stringify(schema);
         } catch (e) {
@@ -242,7 +254,7 @@ router.route('/:id').all(limiter)
       // Validate all fields against schema
       const schemaFields = Object.keys(Project.schema.paths);
       const allowedFields = new Set(schemaFields);
-      
+
       // Create sanitized data object with only allowed fields
       const sanitizedData: Record<string, unknown> = {};
       Object.entries(updateData).forEach(([key, value]) => {

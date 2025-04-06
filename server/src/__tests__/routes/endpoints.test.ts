@@ -1,14 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Request, Response } from 'express';
 import { Types } from 'mongoose';
-import { Endpoint } from '../../models/Endpoint';
 import { endpointRoutes } from '../../routes/endpoints';
 import supertest from 'supertest';
 import express from 'express';
 
 // Import test setup
 import '../setup';
-import { IEndpoint } from '@/types';
+import { Endpoint } from '@/models/Endpoint';
 
 // Create a test app with the endpoint routes
 const app = express();

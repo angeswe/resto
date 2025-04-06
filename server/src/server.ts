@@ -1,4 +1,4 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
+import express, { Application, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import path from 'path';
@@ -8,7 +8,6 @@ import swaggerUi from 'swagger-ui-express';
 
 import { config } from './config';
 import { swaggerSpec } from './config/swagger';
-import { errorHandler } from './middleware/error';
 import { projectRoutes } from './routes/projects';
 import { endpointRoutes } from './routes/endpoints';
 import mockApiRoutes from './routes/mockApi';
@@ -27,7 +26,7 @@ class Server {
     this.setupErrorHandling();
   }
 
-  private setupMiddleware() {
+  private setupMiddleware(): void {
     // Enable CORS for all routes
     this.app.use(cors({
       origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'],
@@ -46,7 +45,7 @@ class Server {
     this.app.use(morgan('dev'));
   }
 
-  private setupRoutes() {
+  private setupRoutes(): void {
     // Swagger documentation
     this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
@@ -66,7 +65,6 @@ class Server {
     const mockRouter = express.Router();
     mockRouter.use('/:projectId/*', (req: Request & { params: { [key: string]: string } }, res, next) => {
       // Extract the actual path from the URL by removing the projectId part
-      console.log("req.params", req.params);
       const fullPath = req.params['0'] || '';
       (req as any).mockPath = fullPath.startsWith('/') ? fullPath : '/' + fullPath;
       (req as any).projectId = req.params.projectId;
@@ -82,11 +80,6 @@ class Server {
 
     // Debug route to test path matching
     this.app.use((req, res, next) => {
-      console.log('Incoming request:', {
-        path: req.path,
-        originalUrl: req.originalUrl,
-        method: req.method
-      });
       next();
     });
 
@@ -101,7 +94,7 @@ class Server {
     }
   }
 
-  private setupErrorHandling() {
+  private setupErrorHandling(): void {
     // Handle 404s
     this.app.use((req, res) => {
       res.status(404).json({
@@ -112,7 +105,7 @@ class Server {
     });
 
     // Handle errors
-    this.app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    this.app.use((err: any, req: express.Request, res: express.Response) => {
       console.error('Unhandled error:', err);
       res.status(500).json({
         success: false,
@@ -122,19 +115,14 @@ class Server {
     });
   }
 
-  public async start() {
+  public async start(): Promise<void> {
     try {
       // Connect to MongoDB
       await mongoose.connect(config.mongoUri);
-      console.log('Connected to MongoDB');
 
       // Start the server
       const port = config.port;
-      this.app.listen(port, () => {
-        console.log(`Server is running on port ${port}`);
-        console.log(`API routes: http://localhost:${port}/api`);
-        console.log(`Mock API routes: http://localhost:${port}/api/mock/{projectId}/{path}`);
-      });
+      this.app.listen(port);
     } catch (error) {
       console.error('Failed to start server:', error);
       process.exit(1);
@@ -143,12 +131,10 @@ class Server {
 }
 
 // Add mockPath to Express Request type
-declare global {
-  namespace Express {
-    interface Request {
-      mockPath?: string;
-      projectId?: string;
-    }
+declare module "express" {
+  interface Request {
+    mockPath?: string;
+    projectId?: string;
   }
 }
 

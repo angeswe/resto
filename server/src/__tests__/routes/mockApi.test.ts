@@ -123,8 +123,6 @@ describe('Mock API Routes', () => {
     });
 
     it('should return an error if no matching endpoint is found', async () => {
-      const projectId = new Types.ObjectId().toString();
-
       // Mock Endpoint.findOne to return null (no endpoint found)
       vi.mocked(Endpoint.findOne).mockResolvedValue(null);
 

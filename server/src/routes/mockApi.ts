@@ -1,35 +1,19 @@
-import express, { Request, Response, NextFunction, Router } from 'express';
+import express, { Request, Response, Router } from 'express';
 import { Types } from 'mongoose';
 import { Endpoint } from '../models/Endpoint';
 import { Project } from '../models/Project';
 import { DataGenerator } from '../utils/dataGenerator';
-import { rateLimit } from 'express-rate-limit';
-
-// Create a rate limiter
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 const router: Router = express.Router();
 
 // Match URL path with endpoint path pattern
 function matchPathPattern(urlPath: string, endpointPath: string): { matches: boolean; params: Record<string, string> } {
   // Sanitize inputs
-  const sanitizedUrlPath = urlPath.replace(/[^\w\-\/]/g, '');
-  const sanitizedEndpointPath = endpointPath.replace(/[^\w\-\/:]/g, '');
+  const sanitizedUrlPath = urlPath.replace(/[^\w/-]/g, '');
+  const sanitizedEndpointPath = endpointPath.replace(/[^\w/-:]/g, '');
 
   const urlParts = sanitizedUrlPath.split('/').filter(Boolean);
   const endpointParts = sanitizedEndpointPath.split('/').filter(Boolean);
-
-  console.log('Path matching:', {
-    urlPath,
-    endpointPath,
-    urlParts,
-    endpointParts
-  });
 
   // Check if this is a parameter path (e.g., :id)
   if (endpointPath.startsWith(':')) {
@@ -37,7 +21,6 @@ function matchPathPattern(urlPath: string, endpointPath: string): { matches: boo
     const paramName = endpointPath.slice(1); // Remove the : prefix
     const paramValue = urlParts[urlParts.length - 1];
     if (paramValue) {
-      console.log('Parameter match:', { paramName, paramValue });
       return {
         matches: true,
         params: { [paramName]: paramValue }
@@ -49,7 +32,6 @@ function matchPathPattern(urlPath: string, endpointPath: string): { matches: boo
   if (urlParts.length === endpointParts.length) {
     const params: Record<string, string> = {};
     let matches = true;
-    console.log('Exact match check:', { urlParts, endpointParts });
     for (let i = 0; i < endpointParts.length; i++) {
       const endpointPart = endpointParts[i];
       const urlPart = urlParts[i];
@@ -66,19 +48,17 @@ function matchPathPattern(urlPath: string, endpointPath: string): { matches: boo
     }
 
     if (matches) {
-      console.log('Exact match:', { params });
       return { matches: true, params };
     }
   }
-  console.log('No match found');
   return { matches: false, params: {} };
 }
 
 // Extract path parameters from URL path
 function extractPathParameters(urlPath: string, endpointPath: string): Record<string, string> {
   // Sanitize inputs
-  const sanitizedUrlPath = urlPath.replace(/[^\w\-\/]/g, '');
-  const sanitizedEndpointPath = endpointPath.replace(/[^\w\-\/:]/g, '');
+  const sanitizedUrlPath = urlPath.replace(/[^\w/-]/g, '');
+  const sanitizedEndpointPath = endpointPath.replace(/[^\w/-:]/g, '');
 
   const urlParts = sanitizedUrlPath.split('/').filter(Boolean);
   const endpointParts = sanitizedEndpointPath.split('/').filter(Boolean);
@@ -145,19 +125,6 @@ router.all('*', async (req: Request, res: Response) => {
         message: 'Invalid project ID format'
       });
     }
-
-    console.log('Mock API request received:', {
-      url: req.url,
-      originalUrl: req.originalUrl,
-      baseUrl: req.baseUrl,
-      path: req.path,
-      mockPath: req.mockPath,
-      projectId: req.projectId,
-      params: req.params,
-      query: req.query,
-      method: req.method
-    });
-
     // Find matching endpoint and project
     const [endpoints, project] = await Promise.all([
       Endpoint.find({ projectId: req.projectId }).lean(),
@@ -188,7 +155,7 @@ router.all('*', async (req: Request, res: Response) => {
         }
         // If no match found with parameter path or not a single GET, try the regular path
         if (!matchedEndpoint) {
-          const { matches, params } = matchPathPattern(req.mockPath || '', endpoint.path);
+          const { matches } = matchPathPattern(req.mockPath || '', endpoint.path);
           if (matches) {
             matchedEndpoint = endpoint;
             // Only extract parameters from paths that contain parameters
@@ -239,7 +206,6 @@ router.all('*', async (req: Request, res: Response) => {
       : matchedEndpoint.schemaDefinition;
 
     // Validate schema before generating data
-    console.log('Schema to validate:', JSON.stringify(schema, null, 2));
     if (!isValidSchema(schema)) {
       console.error('Invalid schema detected');
       return res.status(500).json({
@@ -283,14 +249,12 @@ router.all('*', async (req: Request, res: Response) => {
       //     }
       //   };
       // } else {
-      console.log('Generating list data with count:', count);
       responseData = {
         data: DataGenerator.generate(schema, count)
       };
       // }
     } else {
       // For all other cases (single GET, POST, PUT, DELETE)
-      console.log('Generating single response data');
       responseData = {
         data: DataGenerator.generate(schema, 1)[0]
       };
@@ -299,8 +263,6 @@ router.all('*', async (req: Request, res: Response) => {
         responseData.data = { ...responseData.data, ...pathParams };
       }
     }
-
-    console.log('Generated response data:', JSON.stringify(responseData, null, 2));
 
     // Send response
     const method = req.method as any;
@@ -340,30 +302,23 @@ router.all('*', async (req: Request, res: Response) => {
 function isValidSchema(schema: any): boolean {
   try {
     if (!schema) {
-      console.log('Schema is null or undefined');
       return false;
     }
 
     // Handle array of schemas
     if (Array.isArray(schema)) {
-      console.log('Validating array of schemas');
       return schema.every(s => isValidSchema(s));
     }
 
     // For each property in the schema, validate its value
-    for (const [key, value] of Object.entries(schema)) {
-      console.log(`Validating schema property "${key}" with value:`, value);
-
+    for (const [, value] of Object.entries(schema)) {
       if (value === null) {
-        console.log('Value is null - continuing');
         continue;
       }
 
       // Handle nested objects
       if (typeof value === 'object' && !Array.isArray(value)) {
-        console.log('Validating nested object');
         if (!isValidSchema(value)) {
-          console.log('Nested object validation failed');
           return false;
         }
         continue;
@@ -371,9 +326,7 @@ function isValidSchema(schema: any): boolean {
 
       // Handle arrays of schemas
       if (Array.isArray(value)) {
-        console.log('Validating array value');
         if (!value.every(v => isValidSchema(v))) {
-          console.log('Array validation failed');
           return false;
         }
         continue;
@@ -382,19 +335,15 @@ function isValidSchema(schema: any): boolean {
       // Handle primitive types and random functions
       if (typeof value === 'string') {
         if (value.startsWith('(random:')) {
-          console.log('Validating random function string');
           const match = value.match(/^\(random:(\w+)\)$/);
           if (!match) {
-            console.log('Invalid random function format');
             return false;
           }
         }
       } else if (!['number', 'boolean', 'string'].includes(typeof value)) {
-        console.log(`Invalid value type: ${typeof value}`);
         return false;
       }
     }
-    console.log('Schema validation passed');
     return true;
   } catch (error) {
     console.error('Schema validation error:', error);

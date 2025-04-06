@@ -38,7 +38,7 @@ const ProjectSchema = new Schema({
   timestamps: true,
   toJSON: {
     virtuals: true,
-    transform: function(doc, ret) {
+    transform: (doc, ret): any => {
       ret.id = ret._id;
       delete ret._id;
       delete ret.__v;
@@ -47,7 +47,7 @@ const ProjectSchema = new Schema({
   },
   toObject: {
     virtuals: true,
-    transform: function(doc, ret) {
+    transform: (doc, ret): any => {
       ret.id = ret._id;
       delete ret._id;
       delete ret.__v;

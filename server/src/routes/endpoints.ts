@@ -1,6 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { Endpoint } from '../models/Endpoint';
-import { Project } from '../models/Project';
 import { Types } from 'mongoose';
 import ErrorResponse from '../utils/ErrorResponse';
 import rateLimit from 'express-rate-limit';
@@ -215,7 +214,7 @@ router.put('/endpoints/:endpointId', limiter, async (req: Request, res: Response
     // Validate parameter path if provided
     const parameterPath = req.body.parameterPath;
     if (parameterPath !== undefined && parameterPath !== null && parameterPath !== '') {
-      const paramPathRegex = /^[a-zA-Z0-9\-_\/:]*$/;
+      const paramPathRegex = /^[a-zA-Z0-9\-_/:]*$/;
       if (!paramPathRegex.test(parameterPath)) {
         throw new ErrorResponse('Invalid parameter path format. Must contain only alphanumeric characters, hyphens, underscores, forward slashes, and colons', 400);
       }

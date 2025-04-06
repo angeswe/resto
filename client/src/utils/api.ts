@@ -16,7 +16,6 @@ export const projectsApi = {
   getProjects: async (): Promise<Project[]> => {
     try {
       const response: AxiosResponse<ApiResponse<Project[]>> = await api.get("/projects");
-      console.log('API Response:', response.data); // Debug log
       return response.data.data;
     } catch (error) {
       throw error;
@@ -26,9 +25,7 @@ export const projectsApi = {
   // Get a single project by ID
   getProject: async (projectId: string): Promise<Project> => {
     try {
-      console.log('API: Fetching project with ID:', projectId); // Debug log
       const response: AxiosResponse<ApiResponse<Project>> = await api.get(`/projects/${projectId}`);
-      console.log('API: Received response:', response.data); // Debug log
       if (!response.data.success || !response.data.data) {
         throw new Error('Failed to fetch project data');
       }
@@ -42,7 +39,6 @@ export const projectsApi = {
   // Create a new project
   createProject: async (projectData: ProjectData): Promise<Project> => {
     try {
-      console.log('API: Creating project with data:', projectData);
       const response: AxiosResponse<ApiResponse<Project>> = await api.post('/projects', projectData);
       return response.data.data;
     } catch (error) {
@@ -54,7 +50,6 @@ export const projectsApi = {
   // Update a project
   updateProject: async (projectId: string, projectData: ProjectData): Promise<Project> => {
     try {
-      console.log('API: Updating project with ID:', projectId);
       const response: AxiosResponse<ApiResponse<Project>> = await api.put(`/projects/${projectId}`, projectData);
       return response.data.data;
     } catch (error) {
@@ -66,7 +61,6 @@ export const projectsApi = {
   // Delete a project
   deleteProject: async (projectId: string): Promise<void> => {
     try {
-      console.log('API: Deleting project with ID:', projectId);
       await api.delete(`/projects/${projectId}`);
     } catch (error) {
       console.error('API Error:', error);

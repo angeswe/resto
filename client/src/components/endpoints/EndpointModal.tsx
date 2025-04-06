@@ -50,15 +50,6 @@ const EndpointModal: React.FC<EndpointModalProps> = ({
     };
   }, []);
 
-  useEffect(() => {
-    console.log('EndpointModal rendered', { isOpen, projectId, initialData, theme });
-  }, [isOpen, projectId, initialData, theme]);
-
-  if (!projectId) {
-    console.error('EndpointModal: projectId is required');
-    return null;
-  }
-
   // Determine if we're editing an existing endpoint
   const isEditing = initialData && 'id' in initialData;
   const endpointId = isEditing ? initialData.id : '';
