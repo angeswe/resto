@@ -128,7 +128,7 @@ const EndpointDocs: React.FC<EndpointDocsProps> = (props) => {
       } else if (Array.isArray(value)) {
         result[key] = value.map(item => generateExampleValue({ value: item }).value);
       } else if (typeof value === 'object' && value !== null) {
-        result[key] = generateExampleValue(value);
+        result[key] = generateExampleValue(value as Record<string, unknown>);
       } else {
         result[key] = value;
       }

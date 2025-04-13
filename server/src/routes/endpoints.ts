@@ -12,39 +12,6 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs,
 });
 
-router.get('/debug', limiter, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    // Only allow access in development mode
-    if (process.env.NODE_ENV !== 'development') {
-      return res.status(403).json({
-        success: false,
-        error: 'Debug endpoint is only available in development mode'
-      });
-    }
-
-    // Validate project ID
-    const projectId = req.params.projectId;
-    if (!projectId || !Types.ObjectId.isValid(projectId)) {
-      return res.status(403).json({
-        success: false,
-        error: 'Forbidden',
-        message: 'Debug access requires valid project ID'
-      });
-    }
-
-    // Only show endpoints for this project
-    const endpoints = await Endpoint.find({ projectId }).lean();
-
-    res.json({
-      endpointCount: endpoints.length,
-      endpoints
-    });
-  } catch (error) {
-    console.error('Error getting endpoints:', error);
-    next(error instanceof Error ? error : new Error(String(error)));
-  }
-});
-
 router.get('/projects/:projectId/endpoints', limiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projectId = req.params.projectId;
@@ -281,7 +248,10 @@ router.delete('/endpoints/:endpointId', limiter, async (req: Request, res: Respo
     // Find endpoint first to validate it exists
     const endpoint = await Endpoint.findOne({ _id: endpointId });
     if (!endpoint) {
-      throw new ErrorResponse(`Endpoint not found with id of ${endpointId}`, 404);
+      return res.status(404).json({
+        success: false,
+        error: `Endpoint not found with id of ${endpointId}`
+      });
     }
 
     // Delete the endpoint
