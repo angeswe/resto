@@ -1,18 +1,23 @@
-import express, { Application, Request, Response } from 'express';
-import mongoose from 'mongoose';
+// Import Swagger documentation
+import './swagger';
+
 import cors from 'cors';
-import path from 'path';
 import dotenv from 'dotenv';
+import express, {
+  Application,
+  Request,
+  Response,
+} from 'express';
+import mongoose from 'mongoose';
 import morgan from 'morgan';
+import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 
 import { config } from './config';
 import { swaggerSpec } from './config/swagger';
-import { projectRoutes } from './routes/projects';
 import { endpointRoutes } from './routes/endpoints';
 import mockApiRoutes from './routes/mockApi';
-// Import Swagger documentation
-import './swagger';
+import { projectRoutes } from './routes/projects';
 
 dotenv.config();
 
@@ -29,7 +34,7 @@ class Server {
   private setupMiddleware(): void {
     // Enable CORS for all routes
     this.app.use(cors({
-      origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'],
+      origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000', 'http://localhost:8081'],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
       allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
       credentials: true

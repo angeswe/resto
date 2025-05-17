@@ -18,7 +18,7 @@ services:
     ports:
       - "8082:3000"
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017/resto
+      - MONGODB_URI=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-secretpassword}@mongodb:27017/resto?authSource=admin
       - PORT=3000
       - NODE_ENV=production
     depends_on:
@@ -26,10 +26,13 @@ services:
 
   mongodb:
     image: mongo:latest
+    ports:
+      - 27017:27017    
     volumes:
       - mongodb_data:/data/db
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE:-resto}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME:-admin}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-secretpassword}
     command: ["mongod", "--auth"]
 
